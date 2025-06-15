@@ -1,0 +1,36 @@
+{
+  "name": "discord-platoon-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot for managing military-style platoons and subsections within a Discord server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "platoon",
+    "military",
+    "management",
+    "roles",
+    "discord.js"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/discord-platoon-bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/discord-platoon-bot/issues"
+  },
+  "homepage": "https://github.com/yourusername/discord-platoon-bot#readme",
+  "dependencies": {
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

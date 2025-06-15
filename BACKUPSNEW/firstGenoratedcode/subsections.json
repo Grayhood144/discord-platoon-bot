@@ -1,0 +1,49 @@
+{
+  "_intro": "**Clan Subsections:**\n\n> The Copper Khanate Contingent is organized into six subsections based on any given member's preferred combat style. Members are permitted to be in multiple different subsections simultaneously with the exception of Subsection Officers and Subsection Instructors. Joining a subsection is entirely optional and the decision can be made at any time.\n\n> The primary purpose behind these subsections are for new players to better learn chosen skills and allow for members to better distinguish themselves.\n",
+  "M.E.T.H.": {
+    "label": "M.E.T.H.",
+    "fullName": "Mobile Extraction & Tactical Handling",
+    "officer": [],
+    "instructors": [],
+    "members": [
+      "SAUCEY"
+    ]
+  },
+  "D.I.E.S.E.L.": {
+    "label": "D.I.E.S.E.L.",
+    "fullName": "Destructive Infantry Experts Specializing in Explosives & Launchers",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  },
+  "S.T.A.L.K.E.R.": {
+    "label": "S.T.A.L.K.E.R.",
+    "fullName": "Stealth Tactics And Long-range Kill Engagement Regiment",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  },
+  "C.A.L.I.B.R.E.": {
+    "label": "C.A.L.I.B.R.E.",
+    "fullName": "Close Assault Legion Integrating Ballistics & Rapid Engagements",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  },
+  "G.E.N.E.V.A.": {
+    "label": "G.E.N.E.V.A.",
+    "fullName": "General Emergency Neutralization & Environmental Viability Assistance",
+    "officer": [],
+    "instructors": [],
+    "members": [
+      "grugs22ndtimetrollinrollin"
+    ]
+  },
+  "R.E.T.I.C.L.E.": {
+    "label": "R.E.T.I.C.L.E.",
+    "fullName": "Remote Engagement Tactical Intelligence & Combat Logistics Experts",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  }
+}

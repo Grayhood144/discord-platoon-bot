@@ -1,0 +1,103 @@
+{
+  "roleIDs": {
+    "server1": {
+      "platoons": {
+        "R.E.T.I.C.L.E.": "1336145271213527140",
+        "C.A.L.I.B.R.E.": "1336145407444783177",
+        "D.I.E.S.E.L.": "1336145474721419345",
+        "S.T.A.L.K.E.R.": "1336145558917615637",
+        "M.E.T.H.": "1336145646779891732",
+        "G.E.N.E.V.A.": "1336145717978468352",
+        "S.T.A.T.I.C.": "1383685207311384616"
+      },
+      "ranks": {
+        "Platoon Instructor": "1380772508625666078",
+        "Platoon Leader": "1383688257564446750",
+        "S": "1378997615613710368",
+        "- - - - OFC - - - -": "1305992733835399238",
+        "Warrant Officer": "1305993622965063751",
+        "Master Warrant Officer": "1324595820359712828",
+        "Chief Warrant Officer": "1305992766664474655",
+        "Junior Lieutenant": "1324596248916787221",
+        "Lieutenant Second Class": "1295540261576769668",
+        "Captain": "1318990337598820362",
+        "Major": "1321212403718815916",
+        "Khanate Commodore": "1318990958477447270"
+      }
+    },
+    "server2": {
+      "platoons": {
+        "R.E.T.I.C.L.E.": "1378985570172272672",
+        "C.A.L.I.B.R.E.": "1378985570172272671",
+        "D.I.E.S.E.L.": "1378985570172272670",
+        "S.T.A.L.K.E.R.": "1378985570147242063",
+        "M.E.T.H.": "1378985570147242062",
+        "G.E.N.E.V.A.": "1378985570147242061",
+        "S.T.A.T.I.C.": "1383686387597049856"
+      }
+    }
+  },
+  "_intro": "**Khanate Platoons:**\n\n> The Copper Khanate Contingent is organized into seven active platoons based on any given member's preferred combat style.\n> Members are permitted to be in a maximum of three different platoons simultaneously with the exception of Platoon Officers\n> and Platoon Instructors. Joining a platoon is entirely optional and the decision can be made at any time.\n> \n> The primary purpose behind said platoons are for new players to better learn chosen skills and allow for members to better\n> distinguish themselves.\n\n**The Khanate's platoons in order are:**\nPlatoon I.   M.E.T.H.\nPlatoon II.  C.A.L.I.B.R.E.\nPlatoon III. [ LOST ] M.I.A.\nPlatoon IV.  S.T.A.L.K.E.R.\nPlatoon V.   [ LOST ] K.I.A.\nPlatoon VI.  [ LOST ] K.I.A.\nPlatoon VII. D.I.E.S.E.L.\nPlatoon VIII. S.T.A.T.I.C.\nPlatoon IX.  [ LOST ] M.I.A.\nPlatoon X.   R.E.T.I.C.L.E.\nPlatoon XI.  [ LOST ] REDACTED\nPlatoon XII. [ LOST ] K.I.A.\nPlatoon XIII. G.E.N.E.V.A.\nPlatoon XIV. [ LOST ] K.I.A.\nPlatoon XV.  [ LOST ] K.I.A.",
+  "M.E.T.H.": {
+    "label": "M.E.T.H.",
+    "fullName": "Medical Emergency Treatment Handling",
+    "roleID": "1378985570147242062",
+    "officer": [
+      "603550636545540096"
+    ],
+    "instructors": [
+      "544946624506495009"
+    ],
+    "members": []
+  },
+  "D.I.E.S.E.L.": {
+    "label": "D.I.E.S.E.L.",
+    "fullName": "Direct Integrated Expeditionary Supply & Equipment Logistics",
+    "roleID": "1378985570172272670",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  },
+  "S.T.A.L.K.E.R.": {
+    "label": "S.T.A.L.K.E.R.",
+    "fullName": "Special Tactics & Advanced Lethal Killteam Exploration Reconnaissance",
+    "roleID": "1378985570147242063",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  },
+  "C.A.L.I.B.R.E.": {
+    "label": "C.A.L.I.B.R.E.",
+    "fullName": "Combat Assault Leadership Initiative for Battlefield Reaction & Execution",
+    "roleID": "1378985570172272671",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  },
+  "G.E.N.E.V.A.": {
+    "label": "G.E.N.E.V.A.",
+    "fullName": "General Excruciating Neutralization of Enemy Vital Assets",
+    "roleID": "1378985570147242061",
+    "officer": [],
+    "instructors": [],
+    "members": [
+      "1109248456402403461"
+    ]
+  },
+  "R.E.T.I.C.L.E.": {
+    "label": "R.E.T.I.C.L.E.",
+    "fullName": "Ranged Execution and Tactical Instigation of Combat Location Engagements",
+    "roleID": "1378985570172272672",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  },
+  "S.T.A.T.I.C.": {
+    "label": "S.T.A.T.I.C.",
+    "fullName": "Superior Tactically Armed and Technological Integration Corp",
+    "roleID": "1383686387597049856",
+    "officer": [],
+    "instructors": [],
+    "members": []
+  }
+}
