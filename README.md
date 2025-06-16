@@ -68,6 +68,30 @@ A Discord bot for managing military-style platoons and subsections within a Disc
    node index.js
    ```
 
+## Deployment
+
+For 24/7 hosting, we recommend these reliable options:
+
+### 🚀 Recommended Hosting Options
+
+| Platform | Cost | Uptime | Setup Difficulty | Recommendation |
+|----------|------|--------|------------------|----------------|
+| **AWS Lightsail** | $3.50/month | 99.9% | Easy | ⭐ Excellent |
+| **Oracle Cloud** | Free | 99.9% | Medium | ⭐ Best Value |
+| **Render** | Free | 99.9% | Easy | ⭐ Great |
+
+### Quick Start Guides
+- **AWS Lightsail**: See `DEPLOYMENT.md` for detailed setup
+- **Oracle Cloud**: See `MIGRATION-GUIDE.md` for free tier setup
+- **Render**: See `DEPLOYMENT.md` for simple deployment
+
+### Why These Options?
+- ✅ **No peak hour restrictions** (unlike Railway)
+- ✅ **Better reliability** and uptime
+- ✅ **More cost-effective** than Railway ($5/month)
+- ✅ **Full control** over your server
+- ✅ **Easy scaling** as your bot grows
+
 ## Configuration
 
 ### Role IDs Setup
@@ -117,6 +141,9 @@ discord-platoon-bot/
 ├── userRoles.json        # User role mappings
 ├── deployMessages.json   # Deploy message tracking
 ├── package.json          # Node.js dependencies
+├── ecosystem.config.js   # PM2 configuration for production
+├── DEPLOYMENT.md         # Detailed deployment guides
+├── MIGRATION-GUIDE.md    # Migration from other platforms
 └── README.md            # This file
 ```
 
@@ -134,4 +161,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-If you encounter any issues or have questions, please open an issue on GitHub or contact the development team. 
+If you encounter any issues or have questions:
+1. Check the troubleshooting section in `SETUP.md`
+2. Review the deployment guides in `DEPLOYMENT.md`
+3. Open an issue on GitHub with detailed information
+4. Include your Node.js version and Discord bot permissions 

@@ -1,4 +1,12 @@
-# 24/7 Discord Bot Deployment Guide
+# Migration Guide: Moving Away from Railway
+
+## Why Migrate?
+
+Railway's limitations during peak hours can be frustrating. Here are better alternatives that offer:
+- ✅ No peak hour restrictions
+- ✅ Better uptime reliability
+- ✅ More generous free tiers
+- ✅ Better performance
 
 ## Option 1: AWS Lightsail (Excellent Choice!) ⭐
 
@@ -168,7 +176,7 @@ pm2 restart discord-platoon-bot  # Restart if needed
 
 ### Why Render?
 - **Free tier**: 750 hours/month (31 days)
-- **Easy setup**: Simple deployment process
+- **Easy setup**: Similar to Railway but more reliable
 - **No peak hour restrictions**
 - **Automatic deployments**
 
@@ -226,36 +234,30 @@ fly secrets set DISCORD_TOKEN=your_bot_token_here
 
 ---
 
-## Option 5: Replit (Development/Testing)
+## Migration Checklist
 
-### Step 1: Create Repl
-1. Go to [replit.com](https://replit.com)
-2. Sign up and create a new "Node.js" repl
-3. Upload your bot files or clone from GitHub
+### Before Migration:
+- [ ] Backup your current bot data
+- [ ] Test your bot locally
+- [ ] Update your `.env` file
+- [ ] Commit all changes to GitHub
 
-### Step 2: Add Environment Variables
-1. Click the "Secrets" icon in the left sidebar
-2. Add `DISCORD_TOKEN` with your bot token
+### After Migration:
+- [ ] Test all bot commands
+- [ ] Verify role synchronization works
+- [ ] Check deploy messages update correctly
+- [ ] Monitor logs for any errors
+- [ ] Update your team about the new hosting
 
-### Step 3: Run
-1. Click "Run" button
-2. Your bot will stay online as long as the repl is active
+### Remove Railway:
+- [ ] Go to Railway dashboard
+- [ ] Delete your project
+- [ ] Cancel your subscription
+- [ ] Save money! 💰
 
 ---
 
-## Important Notes
-
-### Environment Variables
-- **NEVER** commit your `.env` file to GitHub
-- Always use the hosting platform's environment variable system
-- Your bot token should be kept secret
-
-### Monitoring
-- Most platforms provide logs and monitoring
-- Set up notifications for crashes if available
-- Monitor your bot's uptime
-
-### Cost Comparison
+## Cost Comparison
 
 | Platform | Monthly Cost | Uptime | Peak Hour Limits | Recommendation |
 |----------|-------------|---------|------------------|----------------|
@@ -263,14 +265,27 @@ fly secrets set DISCORD_TOKEN=your_bot_token_here
 | Oracle Cloud | $0 | 99.9% | ✅ No | ⭐ Best Value |
 | Render | $0 | 99.9% | ✅ No | ⭐ Great |
 | Fly.io | $0 | 99.9% | ✅ No | ⭐ Great |
-| Replit | $0 | Variable | ✅ No | 🔧 Dev Only |
+| Railway | $5 | 99% | ❌ Yes | ⚠️ Avoid |
 
-### Recommended for Beginners
-1. **AWS Lightsail** - Excellent choice, very reliable
-2. **Oracle Cloud** - Best value, completely free
-3. **Render** - Simple setup, very reliable
+---
 
-### Migration from Other Platforms
-If you're currently using Railway or another platform with limitations, see `MIGRATION-GUIDE.md` for detailed migration steps.
+## Support
 
-**AWS Lightsail is an excellent choice!** It's affordable, reliable, and gives you full control over your server. 
+If you need help with migration:
+1. Check the platform-specific documentation
+2. Review error logs
+3. Test commands one by one
+4. Ask for help in Discord developer communities
+
+## Recommendation
+
+**AWS Lightsail is an excellent choice!** It's:
+- ✅ Cheaper than Railway ($3.50 vs $5)
+- ✅ More reliable during peak hours
+- ✅ Better performance
+- ✅ Easy to manage
+- ✅ Scalable as your bot grows
+
+The setup is straightforward and you'll have full control over your server. Perfect for Discord bots!
+
+Want me to help you set up Lightsail specifically? 

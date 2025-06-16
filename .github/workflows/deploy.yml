@@ -1,0 +1,63 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+        
+    - name: Deploy to Lightsail
+      run: |
+        # Get your Lightsail instance IP
+        INSTANCE_IP=$(aws lightsail get-instance-access-details \
+          --instance-name discord-bot \
+          --region ${{ secrets.AWS_REGION }} \
+          --query 'accessDetails.ipAddress' \
+          --output text)
+        
+        echo "Deploying to instance IP: $INSTANCE_IP"
+        
+        # Use SSH to deploy (you'll need to add your SSH key as a secret)
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/lightsail-key ubuntu@$INSTANCE_IP << 'EOF'
+          cd discord-platoon-bot
+          git pull origin main
+          npm install
+          pm2 restart discord-platoon-bot
+          pm2 status
+EOF
+        
+    - name: Alternative: Direct SSH with key
+      if: failure()
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USERNAME }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        script: |
+          cd discord-platoon-bot
+          git pull origin main
+          npm install
+          pm2 restart discord-platoon-bot
+          pm2 status 
