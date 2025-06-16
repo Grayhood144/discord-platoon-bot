@@ -41,7 +41,7 @@
   "M.E.T.H.": {
     "label": "M.E.T.H.",
     "fullName": "Medical Emergency Treatment Handling",
-    "roleID": "1378985570147242062",
+    "roleID": "1336145646779891732",
     "officer": [
       "603550636545540096"
     ],
@@ -53,7 +53,7 @@
   "D.I.E.S.E.L.": {
     "label": "D.I.E.S.E.L.",
     "fullName": "Direct Integrated Expeditionary Supply & Equipment Logistics",
-    "roleID": "1378985570172272670",
+    "roleID": "1336145474721419345",
     "officer": [],
     "instructors": [],
     "members": []
@@ -61,7 +61,7 @@
   "S.T.A.L.K.E.R.": {
     "label": "S.T.A.L.K.E.R.",
     "fullName": "Special Tactics & Advanced Lethal Killteam Exploration Reconnaissance",
-    "roleID": "1378985570147242063",
+    "roleID": "1336145558917615637",
     "officer": [],
     "instructors": [],
     "members": []
@@ -69,7 +69,7 @@
   "C.A.L.I.B.R.E.": {
     "label": "C.A.L.I.B.R.E.",
     "fullName": "Combat Assault Leadership Initiative for Battlefield Reaction & Execution",
-    "roleID": "1378985570172272671",
+    "roleID": "1336145407444783177",
     "officer": [],
     "instructors": [],
     "members": []
@@ -77,7 +77,7 @@
   "G.E.N.E.V.A.": {
     "label": "G.E.N.E.V.A.",
     "fullName": "General Excruciating Neutralization of Enemy Vital Assets",
-    "roleID": "1378985570147242061",
+    "roleID": "1336145717978468352",
     "officer": [],
     "instructors": [],
     "members": [
@@ -87,7 +87,7 @@
   "R.E.T.I.C.L.E.": {
     "label": "R.E.T.I.C.L.E.",
     "fullName": "Ranged Execution and Tactical Instigation of Combat Location Engagements",
-    "roleID": "1378985570172272672",
+    "roleID": "1336145271213527140",
     "officer": [],
     "instructors": [],
     "members": []
@@ -95,7 +95,7 @@
   "S.T.A.T.I.C.": {
     "label": "S.T.A.T.I.C.",
     "fullName": "Superior Tactically Armed and Technological Integration Corp",
-    "roleID": "1383686387597049856",
+    "roleID": "1383685207311384616",
     "officer": [],
     "instructors": [],
     "members": []
