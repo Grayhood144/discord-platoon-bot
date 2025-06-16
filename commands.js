@@ -7,6 +7,15 @@ const deployPath = './deployMessages.json';
 let auditLog = [];
 let testingMode = false;
 
+// Veterancy role IDs
+const VETERANCY_ROLES = {
+  '1st Degree': '1323429003264266251',  // 1 year or more
+  '2nd Degree': '1323429224169607309',  // 9 months
+  '3rd Degree': '1323429658133532813',  // 6 months
+  '4th Degree': '1323430282119876728',  // 3 months
+  '5th Degree': '1323430587410813039'   // 1 month
+};
+
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
@@ -29,6 +38,69 @@ function addToAuditLog(action) {
   auditLog.push(`${new Date().toISOString()} - ${action}`);
   if (auditLog.length > 100) {
     auditLog = auditLog.slice(-100);
+  }
+}
+
+// Function to calculate member veterancy and assign appropriate role
+async function checkAndAssignVeterancy(member, guild) {
+  try {
+    const joinDate = member.joinedAt;
+    if (!joinDate) {
+      console.log(`Could not determine join date for ${member.user.username}`);
+      return null;
+    }
+
+    const now = new Date();
+    const timeInServer = now - joinDate;
+    const monthsInServer = Math.floor(timeInServer / (1000 * 60 * 60 * 24 * 30.44)); // Average days per month
+    const daysInServer = Math.floor(timeInServer / (1000 * 60 * 60 * 24));
+
+    let appropriateRole = null;
+    let veterancyLevel = 'None';
+
+    // Determine appropriate veterancy role
+    if (monthsInServer >= 12) {
+      appropriateRole = VETERANCY_ROLES['1st Degree'];
+      veterancyLevel = '1st Degree';
+    } else if (monthsInServer >= 9) {
+      appropriateRole = VETERANCY_ROLES['2nd Degree'];
+      veterancyLevel = '2nd Degree';
+    } else if (monthsInServer >= 6) {
+      appropriateRole = VETERANCY_ROLES['3rd Degree'];
+      veterancyLevel = '3rd Degree';
+    } else if (monthsInServer >= 3) {
+      appropriateRole = VETERANCY_ROLES['4th Degree'];
+      veterancyLevel = '4th Degree';
+    } else if (monthsInServer >= 1) {
+      appropriateRole = VETERANCY_ROLES['5th Degree'];
+      veterancyLevel = '5th Degree';
+    }
+
+    // Remove all existing veterancy roles
+    for (const roleId of Object.values(VETERANCY_ROLES)) {
+      if (member.roles.cache.has(roleId)) {
+        await member.roles.remove(roleId);
+      }
+    }
+
+    // Add appropriate veterancy role
+    if (appropriateRole) {
+      await member.roles.add(appropriateRole);
+      console.log(`✅ Assigned ${veterancyLevel} veterancy to ${member.user.username}`);
+    }
+
+    return {
+      member: member.user.username,
+      joinDate: joinDate.toISOString().split('T')[0],
+      daysInServer,
+      monthsInServer,
+      veterancyLevel,
+      roleAssigned: appropriateRole ? true : false
+    };
+
+  } catch (error) {
+    console.error(`Error checking veterancy for ${member.user.username}:`, error);
+    return null;
   }
 }
 
@@ -252,7 +324,7 @@ module.exports = {
 
     switch (cmd) {
       case '$help': {
-        const helpText = `**Subsection Bot Command List**\n\n**General Commands**\n• \`deploy\` — Shows the full subsection layout.\n• \`$sync\` — Updates all members in each subsection based on Discord roles.\n• \`$help\` — Displays this help message.\n\n**Personnel Commands**\n• \`$clear @Subsection [instructors|members|all]\`\n\n**Admin Commands** (Restricted to @S or Admins)\n• \`$$deploy true/false\` — Enable or disable testing mode.\n• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n• \`$auditlog\` — View audit log.\n• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n• \`$clearcommands\` — Deletes all command messages.\n• \`$debugroles\` — List all roles in the server.`;
+        const helpText = `**Subsection Bot Command List**\n\n**General Commands**\n• \`deploy\` — Shows the full subsection layout.\n• \`$sync\` — Updates all members in each subsection based on Discord roles.\n• \`$help\` — Displays this help message.\n\n**Personnel Commands**\n• \`$clear @Subsection [instructors|members|all]\`\n\n**Veterancy Commands**\n• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n• \`$veterancy all\` — Check and assign veterancy roles for all members\n• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n**Admin Commands** (Restricted to @S or Admins)\n• \`$$deploy true/false\` — Enable or disable testing mode.\n• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n• \`$auditlog\` — View audit log.\n• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n• \`$clearcommands\` — Deletes all command messages.\n• \`$debugroles\` — List all roles in the server.`;
         
         const sentMsg = await message.channel.send(helpText);
         setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
@@ -328,6 +400,32 @@ module.exports = {
           const reportText = `✅ Sync completed!\n\n**Summary:**\n${syncReport.join('\n')}\n\n**Total members found:** ${totalMembersFound}`;
           const successMsg = await message.channel.send(reportText);
           setTimeout(() => successMsg.delete().catch(() => {}), 15000);
+
+          // Auto-check and assign veterancy roles
+          try {
+            const veterancyMsg = await message.channel.send('🔄 Checking and assigning veterancy roles...');
+            let veterancyProcessed = 0;
+            let veterancyAssigned = 0;
+            
+            for (const [memberId, member] of allMembers) {
+              if (member.user.bot) continue; // Skip bots
+              
+              const result = await checkAndAssignVeterancy(member, message.guild);
+              if (result) {
+                veterancyProcessed++;
+                if (result.roleAssigned) veterancyAssigned++;
+              }
+            }
+            
+            await veterancyMsg.edit(`✅ Veterancy check complete!\n**Processed:** ${veterancyProcessed} members\n**Roles assigned:** ${veterancyAssigned}`);
+            setTimeout(() => veterancyMsg.delete().catch(() => {}), 10000);
+            
+            addToAuditLog(`${formatName(message.author, message.guild)} auto-assigned veterancy roles (${veterancyAssigned} assigned)`);
+          } catch (error) {
+            console.error('Auto-veterancy error:', error);
+            const errorMsg = await message.channel.send('⚠️ Sync completed but veterancy check failed.');
+            setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          }
 
           // Auto-update deploy message after sync
           try {
@@ -510,6 +608,95 @@ module.exports = {
         const statusMsg = await message.channel.send('🧪 Testing mode ended.');
         setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
         addToAuditLog(`${formatName(message.author, message.guild)} ended testing mode`);
+        break;
+      }
+
+      case '$veterancy': {
+        if (!hasRole(author, SYNC_ACCESS) && authorID !== '603550636545540096') {
+          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        const target = args[0];
+        const isCheckOnly = args[1] === 'check';
+
+        if (!target) {
+          const errorMsg = await message.channel.send('❌ Please specify a user (@user) or "all" to check all members.');
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        try {
+          if (target === 'all') {
+            // Check veterancy for all members
+            await message.guild.members.fetch();
+            const allMembers = message.guild.members.cache;
+            
+            const statusMsg = await message.channel.send('🔄 Checking veterancy for all members... This may take a moment.');
+            
+            let processedCount = 0;
+            let assignedCount = 0;
+            const results = [];
+
+            for (const [memberId, member] of allMembers) {
+              if (member.user.bot) continue; // Skip bots
+              
+              const result = await checkAndAssignVeterancy(member, message.guild);
+              if (result) {
+                processedCount++;
+                if (result.roleAssigned) assignedCount++;
+                
+                if (isCheckOnly) {
+                  results.push(`${result.member}: ${result.monthsInServer} months (${result.veterancyLevel})`);
+                } else {
+                  results.push(`${result.member}: ${result.monthsInServer} months → ${result.veterancyLevel}`);
+                }
+              }
+            }
+
+            const reportText = isCheckOnly 
+              ? `📊 **Veterancy Check Results**\n\n${results.slice(0, 20).join('\n')}${results.length > 20 ? `\n\n... and ${results.length - 20} more members` : ''}\n\n**Total checked:** ${processedCount}`
+              : `✅ **Veterancy Assignment Complete**\n\n${results.slice(0, 20).join('\n')}${results.length > 20 ? `\n\n... and ${results.length - 20} more members` : ''}\n\n**Total processed:** ${processedCount}\n**Roles assigned:** ${assignedCount}`;
+
+            await statusMsg.edit(reportText);
+            setTimeout(() => statusMsg.delete().catch(() => {}), 30000);
+
+            addToAuditLog(`${formatName(message.author, message.guild)} ${isCheckOnly ? 'checked' : 'assigned'} veterancy for all members`);
+
+          } else {
+            // Check veterancy for specific user
+            const userId = target.replace(/[<@!>]/g, '');
+            const member = message.guild.members.cache.get(userId);
+            
+            if (!member) {
+              const errorMsg = await message.channel.send('❌ User not found in this server.');
+              setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+              break;
+            }
+
+            const result = await checkAndAssignVeterancy(member, message.guild);
+            
+            if (result) {
+              const actionText = isCheckOnly ? 'checked' : 'assigned';
+              const roleText = isCheckOnly ? '' : (result.roleAssigned ? `\n✅ **Role assigned:** ${result.veterancyLevel}` : '\n❌ **No role assigned** (under 1 month)');
+              
+              const resultText = `📊 **Veterancy ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}**\n\n**Member:** ${result.member}\n**Join Date:** ${result.joinDate}\n**Time in Server:** ${result.monthsInServer} months (${result.daysInServer} days)\n**Veterancy Level:** ${result.veterancyLevel}${roleText}`;
+              
+              const successMsg = await message.channel.send(resultText);
+              setTimeout(() => successMsg.delete().catch(() => {}), 15000);
+
+              addToAuditLog(`${formatName(message.author, message.guild)} ${actionText} veterancy for ${result.member}`);
+            } else {
+              const errorMsg = await message.channel.send('❌ Could not determine veterancy for this user.');
+              setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+            }
+          }
+        } catch (error) {
+          console.error('Veterancy error:', error);
+          const errorMsg = await message.channel.send(`❌ Error processing veterancy: ${error.message}`);
+          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        }
         break;
       }
 
