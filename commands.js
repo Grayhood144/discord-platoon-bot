@@ -708,11 +708,26 @@ module.exports = {
         }
 
         try {
+          // Get version information
+          const packageJson = require('./package.json');
+          const botVersion = packageJson.version;
+          const nodeVersion = process.version;
+          const discordJsVersion = packageJson.dependencies['discord.js'];
+          
           const allRoles = message.guild.roles.cache;
           const roleList = [];
           
+          // Add version information at the top
+          roleList.push(`**🤖 Bot Version Information:**`);
+          roleList.push(`• Bot Version: ${botVersion}`);
+          roleList.push(`• Node.js Version: ${nodeVersion}`);
+          roleList.push(`• Discord.js Version: ${discordJsVersion}`);
+          roleList.push(`• Testing Mode: ${testingMode ? 'Enabled' : 'Disabled'}`);
+          roleList.push(`• Server: ${message.guild.name} (${message.guild.id})`);
+          roleList.push(`• Members: ${message.guild.memberCount}`);
+          
           // Check subsection roles
-          roleList.push('**Subsection Roles:**');
+          roleList.push('\n**Subsection Roles:**');
           for (const [subName, sub] of Object.entries(subsections)) {
             if (subName === '_intro') continue;
             const role = allRoles.get(sub.roleID);
@@ -766,6 +781,17 @@ module.exports = {
               roleList.push(`✅ Sync: ${role.name} (${role.id})`);
             } else {
               roleList.push(`❌ Sync: Role not found (${roleID})`);
+            }
+          }
+
+          // Add veterancy roles
+          roleList.push('\n**Veterancy Roles:**');
+          for (const [degree, roleID] of Object.entries(VETERANCY_ROLES)) {
+            const role = allRoles.get(roleID);
+            if (role) {
+              roleList.push(`✅ ${degree}: ${role.name} (${role.id})`);
+            } else {
+              roleList.push(`❌ ${degree}: Role not found (${roleID})`);
             }
           }
 
