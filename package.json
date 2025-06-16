@@ -5,7 +5,12 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop discord-platoon-bot",
+    "pm2:restart": "pm2 restart discord-platoon-bot",
+    "pm2:logs": "pm2 logs discord-platoon-bot",
+    "pm2:status": "pm2 status"
   },
   "keywords": [
     "discord",
@@ -29,6 +34,9 @@
   "dependencies": {
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "pm2": "^5.3.0"
   },
   "engines": {
     "node": ">=14.0.0"
