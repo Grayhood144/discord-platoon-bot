@@ -165,4 +165,4 @@ If you encounter any issues or have questions:
 1. Check the troubleshooting section in `SETUP.md`
 2. Review the deployment guides in `DEPLOYMENT.md`
 3. Open an issue on GitHub with detailed information
-4. Include your Node.js version and Discord bot permissions 
+4. Include your Node.js version and Discord bot permissions # Test automatic deployment - 
