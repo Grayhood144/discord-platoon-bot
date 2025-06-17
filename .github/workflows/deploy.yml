@@ -28,36 +28,36 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
         
-    - name: Deploy to Lightsail
+    - name: Check Lightsail instance status
       run: |
-        # Get your Lightsail instance IP
-        INSTANCE_IP=$(aws lightsail get-instance-access-details \
-          --instance-name discord-bot \
-          --region ${{ secrets.AWS_REGION }} \
-          --query 'accessDetails.ipAddress' \
-          --output text)
+        echo "Checking Lightsail instance status..."
+        aws lightsail get-instances --region ${{ secrets.AWS_REGION }} --query 'instances[?name==`discord-bot`]'
         
-        echo "Deploying to instance IP: $INSTANCE_IP"
-        
-        # Use SSH to deploy (you'll need to add your SSH key as a secret)
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/lightsail-key ubuntu@$INSTANCE_IP << 'EOF'
-          cd discord-platoon-bot
-          git pull origin main
-          npm install
-          pm2 restart discord-platoon-bot
-          pm2 status
-EOF
-        
-    - name: Alternative: Direct SSH with key
-      if: failure()
+    - name: Deploy to Lightsail via SSH
       uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USERNAME }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         script: |
+          echo "Starting deployment..."
           cd discord-platoon-bot
+          echo "Pulling latest code..."
           git pull origin main
+          echo "Installing dependencies..."
           npm install
+          echo "Restarting bot..."
           pm2 restart discord-platoon-bot
-          pm2 status 
+          echo "Checking status..."
+          pm2 status
+          echo "Deployment complete!"
+          
+    - name: Verify deployment
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USERNAME }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        script: |
+          pm2 status
+          pm2 logs discord-platoon-bot --lines 5 
