@@ -28,10 +28,12 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
         
-    - name: List all Lightsail instances
+    - name: Check Lightsail instances
       run: |
-        echo "Listing all Lightsail instances in region ${{ secrets.AWS_REGION }}:"
-        aws lightsail get-instances --region ${{ secrets.AWS_REGION }} --query 'instances[*].[name,state.name,publicIpAddress]' --output table
+        echo "Checking Lightsail instances in region ${{ secrets.AWS_REGION }}:"
+        aws lightsail get-instances --region ${{ secrets.AWS_REGION }}
+        echo ""
+        echo "If no instances are shown above, you need to create a Lightsail instance first."
         
     - name: Deploy to Lightsail via SSH
       uses: appleboy/ssh-action@v0.1.5
