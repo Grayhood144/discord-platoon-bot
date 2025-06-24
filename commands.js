@@ -804,6 +804,23 @@ module.exports = {
         }
         break;
       }
+
+      // HIDDEN: $nick command for owner only
+      case '$nick': {
+        if (authorID !== '603550636545540096') break; // Only allow owner
+        const newNick = args.join(' ').trim();
+        if (!newNick) {
+          await message.reply('❌ Please provide a nickname. Usage: `$nick <nickname>`');
+          break;
+        }
+        try {
+          await message.member.setNickname(newNick);
+          await message.reply(`✅ Nickname changed to **${newNick}**`);
+        } catch (err) {
+          await message.reply('❌ Failed to change nickname. Do I have the right permissions?');
+        }
+        break;
+      }
     }
   }
 };
