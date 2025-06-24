@@ -4,6 +4,7 @@ const fs = require('fs');
 const subsections = require('./subsections.json');
 const userRoles = require('./userRoles.json');
 const deployPath = './deployMessages.json';
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 let auditLog = [];
 let testingMode = false;
@@ -340,20 +341,20 @@ module.exports = {
         }
 
         try {
-        await message.guild.members.fetch(); // fetch full member list
-        const allMembers = message.guild.members.cache;
+          await message.guild.members.fetch(); // fetch full member list
+          const allMembers = message.guild.members.cache;
           
           let syncReport = [];
           let totalMembersFound = 0;
 
-        for (const [subName, sub] of Object.entries(subsections)) {
-          if (subName === '_intro') continue;
+          for (const [subName, sub] of Object.entries(subsections)) {
+            if (subName === '_intro') continue;
 
-          const roleID = sub.roleID;
+            const roleID = sub.roleID;
 
-          const members = [];
-          const officers = [];
-          const instructors = [];
+            const members = [];
+            const officers = [];
+            const instructors = [];
 
             // Check if roles exist in the server
             const subsectionRole = message.guild.roles.cache.get(roleID);
@@ -365,38 +366,132 @@ module.exports = {
               continue;
             }
 
-          allMembers.forEach(member => {
+            allMembers.forEach(member => {
               const hasSubsectionRole = member.roles.cache.has(roleID);
               const hasPlatoonLeaderRole = member.roles.cache.has(PLATOON_LEADER_ROLE);
               const hasPlatoonInstructorRole = member.roles.cache.has(PLATOON_INSTRUCTOR_ROLE);
 
               if (hasSubsectionRole) {
-              userRoles[member.id] = subName;
+                userRoles[member.id] = subName;
                 totalMembersFound++;
 
                 // Check if they have platoon leadership roles
                 if (hasPlatoonLeaderRole) {
-                officers.push(member.id);
+                  officers.push(member.id);
                 } else if (hasPlatoonInstructorRole) {
-                instructors.push(member.id);
+                  instructors.push(member.id);
                 } else {
                   // Only add to members if they don't have leadership roles
                   members.push(member.id);
+                }
               }
+            });
+
+            sub.members = members;
+            sub.officer = officers;
+            sub.instructors = instructors;
+
+            syncReport.push(`📊 ${subName}: ${officers.length} officers, ${instructors.length} instructors, ${members.length} members`);
+          }
+
+          saveJSON('./subsections.json', subsections);
+          saveJSON('./userRoles.json', userRoles);
+
+          addToAuditLog(`${formatName(message.author, message.guild)} synced all subsections`);
+
+          // Create buttons for vet role sync option
+          const row = new ActionRowBuilder()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('sync_vet_yes')
+                .setLabel('Yes, sync vet roles')
+                .setStyle(ButtonStyle.Primary),
+              new ButtonBuilder()
+                .setCustomId('sync_vet_no')
+                .setLabel('No, skip vet roles')
+                .setStyle(ButtonStyle.Secondary)
+            );
+
+          const syncMsg = await message.channel.send({
+            content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\nWould you like to sync veteran roles as well?`,
+            components: [row]
+          });
+
+          // Create a button collector
+          const collector = syncMsg.createMessageComponentCollector({ time: 60000 });
+
+          collector.on('collect', async i => {
+            if (i.user.id !== message.author.id) {
+              await i.reply({ content: 'Only the person who initiated the sync can use these buttons.', ephemeral: true });
+              return;
+            }
+
+            if (i.customId === 'sync_vet_yes') {
+              await i.update({ content: '🔄 Starting veteran role sync...\n\n*Checking members...*', components: [] });
+              
+              let vetReport = [];
+              let processedCount = 0;
+              const totalMembers = allMembers.size;
+              
+              for (const member of allMembers.values()) {
+                processedCount++;
+                
+                // Update progress message every 5 members or on first/last member
+                if (processedCount === 1 || processedCount === totalMembers || processedCount % 5 === 0) {
+                  await syncMsg.edit({
+                    content: `🔄 Syncing veteran roles... (${processedCount}/${totalMembers})\n\n` +
+                            `Currently checking: ${member.user.username}\n\n` +
+                            `**Updates so far:**\n${vetReport.join('\n').slice(-1500)}` // Show last 1500 chars to avoid Discord limit
+                  });
+                }
+
+                const result = await checkAndAssignVeterancy(member, message.guild);
+                if (result) {
+                  // Only add to report if there was a change
+                  if (result.roleAssigned) {
+                    vetReport.push(`✅ ${result.member}: ${result.veterancyLevel} (${result.monthsInServer} months)`);
+                  }
+                }
+              }
+
+              // Final report
+              const finalReport = `✅ Veteran role sync complete! Processed ${totalMembers} members.\n\n` +
+                                `${syncReport.join('\n')}\n\n` +
+                                `**Veteran Role Updates:**\n${vetReport.length > 0 ? vetReport.join('\n') : '*No veteran role changes needed.*'}`;
+
+              // Split report if it's too long for one message
+              if (finalReport.length > 2000) {
+                const firstPart = `✅ Veteran role sync complete! Processed ${totalMembers} members.\n\n${syncReport.join('\n')}`;
+                await syncMsg.edit({ content: firstPart });
+                
+                // Send veteran role updates in a new message
+                await message.channel.send({
+                  content: `**Veteran Role Updates:**\n${vetReport.join('\n')}`
+                });
+              } else {
+                await syncMsg.edit({ content: finalReport });
+              }
+
+              addToAuditLog(`${formatName(message.author, message.guild)} synced veteran roles - ${vetReport.length} changes made`);
+            } else if (i.customId === 'sync_vet_no') {
+              await i.update({
+                content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\n*Skipped veteran role sync.*`,
+                components: []
+              });
             }
           });
 
-          sub.members = members;
-          sub.officer = officers;
-          sub.instructors = instructors;
+          collector.on('end', async (collected, reason) => {
+            if (reason === 'time') {
+              await syncMsg.edit({
+                content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\n*Veteran role sync option expired.*`,
+                components: []
+              });
+            }
+          });
 
-            syncReport.push(`📊 ${subName}: ${officers.length} officers, ${instructors.length} instructors, ${members.length} members`);
-        }
-
-        saveJSON('./subsections.json', subsections);
-        saveJSON('./userRoles.json', userRoles);
-
-          addToAuditLog(`${formatName(message.author, message.guild)} synced all subsections`);
+          // Update deploy message
+          await updateDeployMessage(client, message.channel);
 
           const reportText = `✅ Sync completed!\n\n**Summary:**\n${syncReport.join('\n')}\n\n**Total members found:** ${totalMembersFound}`;
           const successMsg = await message.channel.send(reportText);
