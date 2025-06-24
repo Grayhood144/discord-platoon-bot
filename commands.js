@@ -427,52 +427,29 @@ module.exports = {
             }
 
             if (i.customId === 'sync_vet_yes') {
-              await i.update({ content: '🔄 Starting veteran role sync...\n\n*Checking members...*', components: [] });
+              await i.update({ content: '🔄 Starting veteran role sync...', components: [] });
               
-              let vetReport = [];
               let processedCount = 0;
               const totalMembers = allMembers.size;
               
               for (const member of allMembers.values()) {
                 processedCount++;
                 
-                // Update progress message every 5 members or on first/last member
-                if (processedCount === 1 || processedCount === totalMembers || processedCount % 5 === 0) {
+                // Update progress message less frequently
+                if (processedCount === 1 || processedCount === totalMembers || processedCount % 20 === 0) {
                   await syncMsg.edit({
-                    content: `🔄 Syncing veteran roles... (${processedCount}/${totalMembers})\n\n` +
-                            `Currently checking: ${member.user.username}\n\n` +
-                            `**Updates so far:**\n${vetReport.join('\n').slice(-1500)}` // Show last 1500 chars to avoid Discord limit
+                    content: `🔄 Syncing veteran roles... (${processedCount}/${totalMembers})`
                   });
                 }
 
-                const result = await checkAndAssignVeterancy(member, message.guild);
-                if (result) {
-                  // Only add to report if there was a change
-                  if (result.roleAssigned) {
-                    vetReport.push(`✅ ${result.member}: ${result.veterancyLevel} (${result.monthsInServer} months)`);
-                  }
-                }
+                await checkAndAssignVeterancy(member, message.guild);
               }
 
-              // Final report - now without repeating the sync report
-              const finalReport = `✅ Veteran role sync complete!\n\n` +
-                                `**Veteran Role Updates:**\n${vetReport.length > 0 ? vetReport.join('\n') : '*No veteran role changes needed.*'}`;
+              await syncMsg.edit({ 
+                content: `✅ Veteran role sync complete! Processed ${totalMembers} members.`
+              });
 
-              // Split report if it's too long for one message
-              if (finalReport.length > 2000) {
-                await syncMsg.edit({ 
-                  content: `✅ Veteran role sync complete!\n\n**Veteran Role Updates (Part 1):**`
-                });
-                
-                // Send veteran role updates in a new message
-                await message.channel.send({
-                  content: `**Veteran Role Updates (Part 2):**\n${vetReport.join('\n')}`
-                });
-              } else {
-                await syncMsg.edit({ content: finalReport });
-              }
-
-              addToAuditLog(`${formatName(message.author, message.guild)} synced veteran roles - ${vetReport.length} changes made`);
+              addToAuditLog(`${formatName(message.author, message.guild)} synced veteran roles`);
             } else if (i.customId === 'sync_vet_no') {
               await i.update({
                 content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\n*Skipped veteran role sync.*`,
@@ -493,45 +470,11 @@ module.exports = {
           // Update deploy message
           await updateDeployMessage(client, message.channel);
 
-          const reportText = `✅ Sync completed!\n\n**Summary:**\n${syncReport.join('\n')}\n\n**Total members found:** ${totalMembersFound}`;
-          const successMsg = await message.channel.send(reportText);
-          setTimeout(() => successMsg.delete().catch(() => {}), 15000);
-
-          // Auto-check and assign veterancy roles
-          try {
-            const veterancyMsg = await message.channel.send('🔄 Checking and assigning veterancy roles...');
-            let veterancyProcessed = 0;
-            let veterancyAssigned = 0;
-            
-            for (const [memberId, member] of allMembers) {
-              if (member.user.bot) continue; // Skip bots
-              
-              const result = await checkAndAssignVeterancy(member, message.guild);
-              if (result) {
-                veterancyProcessed++;
-                if (result.roleAssigned) veterancyAssigned++;
-              }
-            }
-            
-            await veterancyMsg.edit(`✅ Veterancy check complete!\n**Processed:** ${veterancyProcessed} members\n**Roles assigned:** ${veterancyAssigned}`);
-            setTimeout(() => veterancyMsg.delete().catch(() => {}), 10000);
-            
-            addToAuditLog(`${formatName(message.author, message.guild)} auto-assigned veterancy roles (${veterancyAssigned} assigned)`);
-          } catch (error) {
-            console.error('Auto-veterancy error:', error);
-            const errorMsg = await message.channel.send('⚠️ Sync completed but veterancy check failed.');
-            setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          }
-
           // Auto-update deploy message after sync
           try {
             await updateDeployMessage(client);
-            const updateMsg = await message.channel.send('🔄 Deploy message updated automatically.');
-            setTimeout(() => updateMsg.delete().catch(() => {}), 5000);
           } catch (error) {
             console.error('Auto-deploy update error:', error);
-            const errorMsg = await message.channel.send('⚠️ Sync completed but deploy message update failed. Run `deploy` manually.');
-            setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
           }
         } catch (error) {
           console.error('Sync error:', error);
