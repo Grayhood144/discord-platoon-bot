@@ -46,58 +46,110 @@
       "603550636545540096"
     ],
     "instructors": [
-      "544946624506495009"
+      "557717033874096148"
     ],
-    "members": []
+    "members": [
+      "480826491228258325",
+      "585680151342219284"
+    ]
   },
   "D.I.E.S.E.L.": {
     "label": "D.I.E.S.E.L.",
     "fullName": "Direct Integrated Expeditionary Supply & Equipment Logistics",
     "roleID": "1336145474721419345",
-    "officer": [],
+    "officer": [
+      "729165499300053064"
+    ],
     "instructors": [],
-    "members": []
+    "members": [
+      "1060699801664102471",
+      "749030188762923179",
+      "567052936195080233",
+      "445006796139134987"
+    ]
   },
   "S.T.A.L.K.E.R.": {
     "label": "S.T.A.L.K.E.R.",
     "fullName": "Special Tactics & Advanced Lethal Killteam Exploration Reconnaissance",
     "roleID": "1336145558917615637",
-    "officer": [],
-    "instructors": [],
-    "members": []
+    "officer": [
+      "1171131930327122042"
+    ],
+    "instructors": [
+      "691354374902906971",
+      "1238157828221571164",
+      "960529680249802752"
+    ],
+    "members": [
+      "700913263604531232",
+      "507580590506246155",
+      "162305082535182336",
+      "585680151342219284",
+      "616036365905297503"
+    ]
   },
   "C.A.L.I.B.R.E.": {
     "label": "C.A.L.I.B.R.E.",
     "fullName": "Combat Assault Leadership Initiative for Battlefield Reaction & Execution",
     "roleID": "1336145407444783177",
-    "officer": [],
+    "officer": [
+      "469451072038240256"
+    ],
     "instructors": [],
-    "members": []
+    "members": [
+      "690223180899549223",
+      "251766446030454787",
+      "1176730839388786750",
+      "266133796930322432",
+      "350477119454969859",
+      "1282808213980446780",
+      "567052936195080233",
+      "721873984026574978",
+      "1130795953071341619"
+    ]
   },
   "G.E.N.E.V.A.": {
     "label": "G.E.N.E.V.A.",
     "fullName": "General Excruciating Neutralization of Enemy Vital Assets",
     "roleID": "1336145717978468352",
-    "officer": [],
-    "instructors": [],
+    "officer": [
+      "864307319478288414"
+    ],
+    "instructors": [
+      "197144466056806400"
+    ],
     "members": [
-      "1109248456402403461"
+      "1064303643735629957",
+      "251766446030454787",
+      "266133796930322432",
+      "1286385444506042489",
+      "1239317419504435340",
+      "585680151342219284"
     ]
   },
   "R.E.T.I.C.L.E.": {
     "label": "R.E.T.I.C.L.E.",
     "fullName": "Ranged Execution and Tactical Instigation of Combat Location Engagements",
     "roleID": "1336145271213527140",
-    "officer": [],
-    "instructors": [],
-    "members": []
+    "officer": [
+      "1109163394948411602"
+    ],
+    "instructors": [
+      "544946624506495009"
+    ],
+    "members": [
+      "884039812796006411",
+      "162305082535182336"
+    ]
   },
   "S.T.A.T.I.C.": {
     "label": "S.T.A.T.I.C.",
     "fullName": "Superior Tactically Armed and Technological Integration Corp",
     "roleID": "1383685207311384616",
     "officer": [],
-    "instructors": [],
+    "instructors": [
+      "1305752738738606110"
+    ],
     "members": []
   }
 }
