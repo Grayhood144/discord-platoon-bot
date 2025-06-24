@@ -454,19 +454,19 @@ module.exports = {
                 }
               }
 
-              // Final report
-              const finalReport = `✅ Veteran role sync complete! Processed ${totalMembers} members.\n\n` +
-                                `${syncReport.join('\n')}\n\n` +
+              // Final report - now without repeating the sync report
+              const finalReport = `✅ Veteran role sync complete!\n\n` +
                                 `**Veteran Role Updates:**\n${vetReport.length > 0 ? vetReport.join('\n') : '*No veteran role changes needed.*'}`;
 
               // Split report if it's too long for one message
               if (finalReport.length > 2000) {
-                const firstPart = `✅ Veteran role sync complete! Processed ${totalMembers} members.\n\n${syncReport.join('\n')}`;
-                await syncMsg.edit({ content: firstPart });
+                await syncMsg.edit({ 
+                  content: `✅ Veteran role sync complete!\n\n**Veteran Role Updates (Part 1):**`
+                });
                 
                 // Send veteran role updates in a new message
                 await message.channel.send({
-                  content: `**Veteran Role Updates:**\n${vetReport.join('\n')}`
+                  content: `**Veteran Role Updates (Part 2):**\n${vetReport.join('\n')}`
                 });
               } else {
                 await syncMsg.edit({ content: finalReport });
