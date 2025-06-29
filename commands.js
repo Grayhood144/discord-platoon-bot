@@ -18,6 +18,31 @@ const VETERANCY_ROLES = {
   '5th Degree': '1323430587410813039'   // 1 month
 };
 
+const WARRANT_OFFICER_ROLE = '1378985570289844314'; // Chief Warrant Officer role ID
+const OFFICER_ROLE = '1305992733835399238'; // - - - - OFC - - - - role ID
+
+// Role IDs for ranks
+const RANK_ROLES = {
+  'private': '1295543139808968737',
+  'pfc': '1322687587420475475',
+  'lance': '1322687344423342161'
+};
+
+// Role IDs for roles to remove
+const REMOVE_ROLES = {
+  'cadet': '1295543221530787870',
+  'trainee': '1295546993736679536',
+  'tra': '1305993273386729532'
+};
+
+// Role IDs for additional roles to add
+const ADD_ROLES = {
+  'ens': '1305992787220496424',
+  'member': '1305993742083166250',
+  'enlisted': '1295545358767755336',
+  'dashes': '1305993620049887323'
+};
+
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
@@ -326,7 +351,7 @@ module.exports = {
 
     switch (cmd) {
       case '$help': {
-        const helpText = `**Subsection Bot Command List**\n\n**General Commands**\n• \`deploy\` — Shows the full subsection layout.\n• \`$sync\` — Updates all members in each subsection based on Discord roles.\n• \`$help\` — Displays this help message.\n\n**Veterancy Commands**\n• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n• \`$veterancy all\` — Check and assign veterancy roles for all members\n• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n**Admin Commands** (Restricted to @S or Admins)\n• \`$$deploy true/false\` — Enable or disable testing mode.\n• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n• \`$auditlog\` — View audit log.\n• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n• \`$clearcommands\` — Deletes all command messages.\n• \`$debugroles\` — List all roles in the server.`;
+        const helpText = `**Subsection Bot Command List**\n\n**General Commands**\n• \`deploy\` — Shows the full subsection layout.\n• \`$sync\` — Updates all members in each subsection based on Discord roles.\n• \`$help\` — Displays this help message.\n\n**Veterancy Commands**\n• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n• \`$veterancy all\` — Check and assign veterancy roles for all members\n• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n**Admin Commands** (Restricted to @S or Admins)\n• \`$$deploy true/false\` — Enable or disable testing mode.\n• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n• \`$auditlog\` — View audit log.\n• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n• \`$clearcommands\` — Deletes all command messages.\n• \`$debugroles\` — List all roles in the server.\n• \`$eval @user rank\` — Promote a member to a specific rank.`;
         
         const sentMsg = await message.channel.send(helpText);
         setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
@@ -840,6 +865,73 @@ module.exports = {
           console.error('Debug roles error:', error);
           const errorMsg = await message.channel.send(`❌ Error checking roles: ${error.message}`);
           setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        }
+        break;
+      }
+
+      case '$eval': {
+        // Check if the user is a warrant officer or - - - - OFC - - - -
+        if (!hasRole(author, [WARRANT_OFFICER_ROLE, OFFICER_ROLE])) {
+          const errorMsg = await message.channel.send('❌ You do not have permission to use this command. Only Warrant Officers and - - - - OFC - - - - can use this command.');
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        // Check command format
+        if (args.length !== 2) {
+          const errorMsg = await message.channel.send('❌ Invalid command format. Use: `$eval @user rank` where rank is private, pfc, or lance');
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        // Parse arguments
+        const userMention = args[0];
+        const rank = args[1].toLowerCase();
+        
+        // Validate rank
+        if (!['private', 'pfc', 'lance'].includes(rank)) {
+          const errorMsg = await message.channel.send('❌ Invalid rank. Must be one of: private, pfc, lance');
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        try {
+          // Get the target user
+          const userID = userMention.replace(/[<@!>]/g, '');
+          const targetMember = await message.guild.members.fetch(userID);
+
+          // Check if user has Cadet role
+          if (!hasRole(targetMember, [REMOVE_ROLES.cadet])) {
+            const errorMsg = await message.channel.send('❌ This command can only be used on members with the Cadet role.');
+            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+            break;
+          }
+
+          // Remove old roles
+          for (const roleID of Object.values(REMOVE_ROLES)) {
+            if (targetMember.roles.cache.has(roleID)) {
+              await targetMember.roles.remove(roleID);
+            }
+          }
+
+          // Add new rank role
+          await targetMember.roles.add(RANK_ROLES[rank]);
+
+          // Add additional roles
+          for (const roleID of Object.values(ADD_ROLES)) {
+            await targetMember.roles.add(roleID);
+          }
+
+          // Log the promotion
+          const successMsg = await message.channel.send(`✅ Successfully promoted ${targetMember.user.tag} to ${rank.toUpperCase()}`);
+          setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+          
+          // Add to audit log
+          addToAuditLog(`${formatName(message.author, message.guild)} promoted ${formatName(targetMember.user, message.guild)} to ${rank.toUpperCase()}`);
+        } catch (error) {
+          console.error('Eval command error:', error);
+          const errorMsg = await message.channel.send(`❌ Error executing command: ${error.message}`);
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         }
         break;
       }
