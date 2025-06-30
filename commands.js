@@ -366,20 +366,20 @@ module.exports = {
         }
 
         try {
-          await message.guild.members.fetch(); // fetch full member list
-          const allMembers = message.guild.members.cache;
+        await message.guild.members.fetch(); // fetch full member list
+        const allMembers = message.guild.members.cache;
           
           let syncReport = [];
           let totalMembersFound = 0;
 
-          for (const [subName, sub] of Object.entries(subsections)) {
-            if (subName === '_intro') continue;
+        for (const [subName, sub] of Object.entries(subsections)) {
+          if (subName === '_intro') continue;
 
-            const roleID = sub.roleID;
+          const roleID = sub.roleID;
 
-            const members = [];
-            const officers = [];
-            const instructors = [];
+          const members = [];
+          const officers = [];
+          const instructors = [];
 
             // Check if roles exist in the server
             const subsectionRole = message.guild.roles.cache.get(roleID);
@@ -391,36 +391,36 @@ module.exports = {
               continue;
             }
 
-            allMembers.forEach(member => {
+          allMembers.forEach(member => {
               const hasSubsectionRole = member.roles.cache.has(roleID);
               const hasPlatoonLeaderRole = member.roles.cache.has(PLATOON_LEADER_ROLE);
               const hasPlatoonInstructorRole = member.roles.cache.has(PLATOON_INSTRUCTOR_ROLE);
 
               if (hasSubsectionRole) {
-                userRoles[member.id] = subName;
+              userRoles[member.id] = subName;
                 totalMembersFound++;
 
                 // Check if they have platoon leadership roles
                 if (hasPlatoonLeaderRole) {
-                  officers.push(member.id);
+                officers.push(member.id);
                 } else if (hasPlatoonInstructorRole) {
-                  instructors.push(member.id);
+                instructors.push(member.id);
                 } else {
                   // Only add to members if they don't have leadership roles
                   members.push(member.id);
-                }
               }
-            });
+            }
+          });
 
-            sub.members = members;
-            sub.officer = officers;
-            sub.instructors = instructors;
+          sub.members = members;
+          sub.officer = officers;
+          sub.instructors = instructors;
 
             syncReport.push(`📊 ${subName}: ${officers.length} officers, ${instructors.length} instructors, ${members.length} members`);
-          }
+        }
 
-          saveJSON('./subsections.json', subsections);
-          saveJSON('./userRoles.json', userRoles);
+        saveJSON('./subsections.json', subsections);
+        saveJSON('./userRoles.json', userRoles);
 
           addToAuditLog(`${formatName(message.author, message.guild)} synced all subsections`);
 

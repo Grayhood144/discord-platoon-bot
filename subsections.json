@@ -62,8 +62,8 @@
     ],
     "instructors": [],
     "members": [
-      "1060699801664102471",
       "749030188762923179",
+      "1060699801664102471",
       "567052936195080233",
       "445006796139134987"
     ]
@@ -146,10 +146,12 @@
     "label": "S.T.A.T.I.C.",
     "fullName": "Superior Tactically Armed and Technological Integration Corp",
     "roleID": "1383685207311384616",
-    "officer": [],
-    "instructors": [
+    "officer": [
       "1305752738738606110"
     ],
-    "members": []
+    "instructors": [],
+    "members": [
+      "581249856950108203"
+    ]
   }
 }
