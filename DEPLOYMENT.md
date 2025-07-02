@@ -1,154 +1,59 @@
-# 24/7 Discord Bot Deployment Guide
+# Discord Bot Deployment Guide
 
-## Option 1: AWS Lightsail (Excellent Choice!) ⭐
+## Raspberry Pi Deployment (Recommended)
 
-### Why AWS Lightsail?
-- **Very affordable**: Starting at $3.50/month for 512MB RAM
-- **Reliable**: AWS infrastructure with 99.9% uptime
-- **No peak hour restrictions**
-- **Easy to use**: Simple dashboard, one-click deployments
-- **Scalable**: Easy to upgrade as your bot grows
-- **Great for Discord bots**: Perfect resource allocation
+### Why Raspberry Pi?
+- **One-time cost**: No monthly fees
+- **Full control**: Complete access to your hardware
+- **Reliable**: Run 24/7 from your home
+- **Easy to maintain**: Simple updates and monitoring
+- **Great for Discord bots**: Perfect for small to medium bots
 
-### Step 1: Create AWS Account
-1. Go to [aws.amazon.com/lightsail](https://aws.amazon.com/lightsail)
-2. Sign up for AWS account (requires credit card)
-3. Navigate to Lightsail console
+### Prerequisites
+1. Raspberry Pi (3 or 4 recommended)
+2. SD card with Raspberry Pi OS installed
+3. Stable internet connection
+4. Power supply
+5. (Optional) Ethernet cable for better reliability
 
-### Step 2: Create Instance
-1. Click "Create instance"
-2. Choose your options:
-   - **Platform**: Linux/Unix
-   - **Blueprint**: Ubuntu 22.04 LTS
-   - **Instance plan**: $3.50/month (512MB RAM, 1 vCPU, 20GB SSD)
-   - **Name**: `discord-bot`
-3. Click "Create instance"
+### Step 1: Initial Setup
+1. Install Raspberry Pi OS using Raspberry Pi Imager
+2. Enable SSH during installation
+3. Configure WiFi (if not using ethernet)
+4. Connect to your Pi via SSH
 
-### Step 3: Connect to Your Instance
-1. Wait for instance to start (green checkmark)
-2. Click on your instance name
-3. Go to "Connect" tab
-4. Use the browser-based SSH or download SSH key
-
-### Step 4: Deploy Your Bot
-1. **SSH into your instance** (via browser or terminal):
-   ```bash
-   ssh -i your-key.pem ubuntu@your-instance-ip
-   ```
-
-2. **Update system and install Node.js**:
-   ```bash
-   sudo apt update
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-   ```
-
-3. **Install PM2** (process manager):
-   ```bash
-   sudo npm install -g pm2
-   ```
-
-4. **Clone your repository**:
-   ```bash
-   git clone https://github.com/yourusername/discord-platoon-bot.git
-   cd discord-platoon-bot
-   ```
-
-5. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-6. **Create environment file**:
-   ```bash
-   nano .env
-   # Add: DISCORD_TOKEN=your_bot_token_here
-   ```
-
-7. **Start with PM2**:
-   ```bash
-   pm2 start ecosystem.config.js
-   pm2 startup
-   pm2 save
-   ```
-
-### Step 5: Monitor Your Bot
+### Step 2: Install Dependencies
 ```bash
-pm2 status          # Check if bot is running
-pm2 logs discord-platoon-bot  # View logs
-pm2 restart discord-platoon-bot  # Restart if needed
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Install PM2 (process manager)
+sudo npm install -g pm2
 ```
 
-### Lightsail Benefits:
-- **Cost**: $3.50/month (cheaper than Railway's $5)
-- **Performance**: Better than Railway during peak hours
-- **Control**: Full server access
-- **Monitoring**: Built-in metrics and alerts
-- **Backups**: Automatic daily backups included
-
----
-
-## Option 2: Oracle Cloud Free Tier (Best Value)
-
-### Why Oracle Cloud?
-- **Completely FREE forever** (no credit card charges)
-- **2 AMD VMs** with 1GB RAM each
-- **24GB storage** per VM
-- **99.9% uptime** guarantee
-- **No peak hour restrictions**
-
-### Step 1: Create Oracle Account
-1. Go to [oracle.com/cloud/free](https://oracle.com/cloud/free)
-2. Sign up for free tier (requires credit card verification but won't charge)
-3. Choose your region (pick closest to you)
-
-### Step 2: Create VM Instance
-1. In Oracle Cloud Console, go to "Compute" → "Instances"
-2. Click "Create Instance"
-3. Choose "Always Free" options:
-   - **Name**: `discord-bot-vm`
-   - **Image**: Canonical Ubuntu 22.04
-   - **Shape**: VM.Standard.A1.Flex (Always Free)
-   - **Memory**: 6GB
-   - **OCPUs**: 1
-4. Create SSH key pair and download it
-5. Click "Create"
-
 ### Step 3: Deploy Your Bot
-1. **SSH into your VM**:
-   ```bash
-   ssh -i your-key.pem ubuntu@your-vm-ip
-   ```
-
-2. **Install Node.js**:
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-   ```
-
-3. **Install PM2** (process manager):
-   ```bash
-   sudo npm install -g pm2
-   ```
-
-4. **Clone your repository**:
+1. **Clone your repository**:
    ```bash
    git clone https://github.com/yourusername/discord-platoon-bot.git
    cd discord-platoon-bot
    ```
 
-5. **Install dependencies**:
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-6. **Create environment file**:
+3. **Create environment file**:
    ```bash
    nano .env
    # Add: DISCORD_TOKEN=your_bot_token_here
    ```
 
-7. **Start with PM2**:
+4. **Start with PM2**:
    ```bash
    pm2 start ecosystem.config.js
    pm2 startup
@@ -162,115 +67,51 @@ pm2 logs discord-platoon-bot  # View logs
 pm2 restart discord-platoon-bot  # Restart if needed
 ```
 
----
+### Raspberry Pi Benefits:
+- **Cost-effective**: One-time hardware cost
+- **Full control**: Complete access to your system
+- **Privacy**: Your data stays on your hardware
+- **Learning**: Great for learning Linux and server management
+- **Expandable**: Can run other services alongside your bot
 
-## Option 3: Render (Simple Alternative)
+### Important Notes
 
-### Why Render?
-- **Free tier**: 750 hours/month (31 days)
-- **Easy setup**: Simple deployment process
-- **No peak hour restrictions**
-- **Automatic deployments**
-
-### Step 1: Deploy to Render
-1. Go to [render.com](https://render.com)
-2. Sign up with GitHub
-3. Click "New" → "Web Service"
-4. Connect your GitHub repository
-
-### Step 2: Configure Service
-- **Name**: `discord-platoon-bot`
-- **Environment**: `Node`
-- **Build Command**: `npm install`
-- **Start Command**: `npm start`
-- **Plan**: Free
-
-### Step 3: Add Environment Variables
-1. Go to "Environment" tab
-2. Add variable:
-   - **Key**: `DISCORD_TOKEN`
-   - **Value**: Your bot token
-
-### Step 4: Deploy
-1. Click "Create Web Service"
-2. Render will automatically deploy your bot
-3. Your bot will be online 24/7!
-
----
-
-## Option 4: Fly.io (Developer Friendly)
-
-### Why Fly.io?
-- **Generous free tier**
-- **Global edge deployment**
-- **Great performance**
-- **No peak hour restrictions**
-
-### Step 1: Install Fly CLI
-```bash
-curl -L https://fly.io/install.sh | sh
-```
-
-### Step 2: Login and Deploy
-```bash
-fly auth login
-fly launch
-# Follow the prompts
-fly deploy
-```
-
-### Step 3: Set Environment Variables
-```bash
-fly secrets set DISCORD_TOKEN=your_bot_token_here
-```
-
----
-
-## Option 5: Replit (Development/Testing)
-
-### Step 1: Create Repl
-1. Go to [replit.com](https://replit.com)
-2. Sign up and create a new "Node.js" repl
-3. Upload your bot files or clone from GitHub
-
-### Step 2: Add Environment Variables
-1. Click the "Secrets" icon in the left sidebar
-2. Add `DISCORD_TOKEN` with your bot token
-
-### Step 3: Run
-1. Click "Run" button
-2. Your bot will stay online as long as the repl is active
-
----
-
-## Important Notes
-
-### Environment Variables
+#### Environment Variables
 - **NEVER** commit your `.env` file to GitHub
-- Always use the hosting platform's environment variable system
-- Your bot token should be kept secret
+- Keep your bot token secure
 
-### Monitoring
-- Most platforms provide logs and monitoring
-- Set up notifications for crashes if available
-- Monitor your bot's uptime
+#### Maintenance
+1. Regularly update your system:
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
+2. Monitor your bot's logs:
+   ```bash
+   pm2 logs discord-platoon-bot
+   ```
+3. Set up automatic restarts if needed:
+   ```bash
+   pm2 startup
+   pm2 save
+   ```
 
-### Cost Comparison
+#### Backup
+1. Regularly backup your bot's data
+2. Consider using git for version control
+3. Keep a copy of your .env file in a secure location
 
-| Platform | Monthly Cost | Uptime | Peak Hour Limits | Recommendation |
-|----------|-------------|---------|------------------|----------------|
-| AWS Lightsail | $3.50 | 99.9% | ✅ No | ⭐ Excellent |
-| Oracle Cloud | $0 | 99.9% | ✅ No | ⭐ Best Value |
-| Render | $0 | 99.9% | ✅ No | ⭐ Great |
-| Fly.io | $0 | 99.9% | ✅ No | ⭐ Great |
-| Replit | $0 | Variable | ✅ No | 🔧 Dev Only |
+---
 
-### Recommended for Beginners
-1. **AWS Lightsail** - Excellent choice, very reliable
-2. **Oracle Cloud** - Best value, completely free
-3. **Render** - Simple setup, very reliable
+## Troubleshooting
 
-### Migration from Other Platforms
-If you're currently using Railway or another platform with limitations, see `MIGRATION-GUIDE.md` for detailed migration steps.
+### Common Issues
+1. **Bot not starting**: Check logs with `pm2 logs`
+2. **Connection issues**: Verify internet connection
+3. **Permission errors**: Check file permissions
+4. **Memory issues**: Monitor with `pm2 monit`
 
-**AWS Lightsail is an excellent choice!** It's affordable, reliable, and gives you full control over your server. 
+### Getting Help
+1. Check the troubleshooting section in `SETUP.md`
+2. Review error logs in the `logs` directory
+3. Open an issue on GitHub with detailed information
+4. Include your Node.js version and Discord bot permissions 

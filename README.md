@@ -43,6 +43,9 @@ A Discord bot for managing military-style platoons with role synchronization, ve
 - Node.js (v14 or higher)
 - Discord Bot Token
 - Discord Server with configured roles
+- Raspberry Pi (3 or 4 recommended)
+- SD card with Raspberry Pi OS
+- Stable internet connection
 
 ### Installation
 
@@ -70,32 +73,32 @@ A Discord bot for managing military-style platoons with role synchronization, ve
 
 5. **Run the bot**
    ```bash
-   node index.js
+   pm2 start ecosystem.config.js
    ```
 
 ## Deployment
 
-For 24/7 hosting, we recommend these reliable options:
+For 24/7 hosting, we recommend using a Raspberry Pi:
 
-### ðŸš€ Recommended Hosting Options
+### 🚀 Raspberry Pi Deployment
 
-| Platform | Cost | Uptime | Setup Difficulty | Recommendation |
-|----------|------|--------|------------------|----------------|
-| **AWS Lightsail** | $3.50/month | 99.9% | Easy | â­ Excellent |
-| **Oracle Cloud** | Free | 99.9% | Medium | â­ Best Value |
-| **Render** | Free | 99.9% | Easy | â­ Great |
+| Feature | Details |
+|---------|---------|
+| **Cost** | One-time hardware cost |
+| **Uptime** | 24/7 (dependent on your internet) |
+| **Control** | Full hardware access |
+| **Setup** | Medium difficulty |
+| **Maintenance** | Simple updates via SSH |
 
-### Quick Start Guides
-- **AWS Lightsail**: See `DEPLOYMENT.md` for detailed setup
-- **Oracle Cloud**: See `MIGRATION-GUIDE.md` for free tier setup
-- **Render**: See `DEPLOYMENT.md` for simple deployment
+### Quick Start Guide
+- See `DEPLOYMENT.md` for detailed Raspberry Pi setup instructions
 
-### Why These Options?
-- âœ… **No peak hour restrictions** (unlike Railway)
-- âœ… **Better reliability** and uptime
-- âœ… **More cost-effective** than Railway ($5/month)
-- âœ… **Full control** over your server
-- âœ… **Easy scaling** as your bot grows
+### Why Raspberry Pi?
+- ✅ **One-time cost** - No monthly fees
+- ✅ **Full control** - Your hardware, your rules
+- ✅ **Privacy** - Data stays on your device
+- ✅ **Learning opportunity** - Great for Linux experience
+- ✅ **Expandable** - Run other services too
 
 ## Configuration
 
@@ -139,17 +142,17 @@ Ensure your bot has the following permissions:
 
 ```
 discord-platoon-bot/
-â”œâ”€â”€ index.js              # Main bot entry point
-â”œâ”€â”€ commands.js           # Command handlers
-â”œâ”€â”€ messageCleaner.js     # Message cleanup utilities
-â”œâ”€â”€ subsections.json      # Platoon and role configuration
-â”œâ”€â”€ userRoles.json        # User role mappings
-â”œâ”€â”€ deployMessages.json   # Deploy message tracking
-â”œâ”€â”€ package.json          # Node.js dependencies
-â”œâ”€â”€ ecosystem.config.js   # PM2 configuration for production
-â”œâ”€â”€ DEPLOYMENT.md         # Detailed deployment guides
-â”œâ”€â”€ MIGRATION-GUIDE.md    # Migration from other platforms
-â””â”€â”€ README.md            # This file
+├── index.js              # Main bot entry point
+├── commands.js           # Command handlers
+├── messageCleaner.js     # Message cleanup utilities
+├── subsections.json      # Platoon and role configuration
+├── userRoles.json        # User role mappings
+├── deployMessages.json   # Deploy message tracking
+├── package.json          # Node.js dependencies
+├── ecosystem.config.js   # PM2 configuration for production
+├── DEPLOYMENT.md         # Detailed deployment guides
+├── MIGRATION-GUIDE.md    # Migration from other platforms
+└── README.md            # This file
 ```
 
 ## Contributing
@@ -168,7 +171,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have questions:
 1. Check the troubleshooting section in `SETUP.md`
-2. Review the deployment guides in `DEPLOYMENT.md`
+2. Review the deployment guide in `DEPLOYMENT.md`
 3. Open an issue on GitHub with detailed information
 4. Include your Node.js version and Discord bot permissions
 
