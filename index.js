@@ -43,6 +43,19 @@ client.once('ready', () => {
     // Then schedule it to run every 24 hours
     setInterval(checkAllMemberRoles, 24 * 60 * 60 * 1000);
   }, timeUntilFirstCheck);
+
+  // Start the bump reminder
+  setInterval(async () => {
+    try {
+      const channel = await client.channels.fetch('1305956807155515402');
+      if (channel) {
+        await channel.send('/bump');
+        console.log('Sent bump command');
+      }
+    } catch (error) {
+      console.error('Error sending bump command:', error);
+    }
+  }, 60 * 60 * 1000); // 1 hour in milliseconds
 });
 
 // Function to check and assign roles for a single member
