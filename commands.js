@@ -45,18 +45,18 @@ const ADD_ROLES = {
 
 const JUNIOR_OFFICER_ROLE = '1295544720222589069'; // Junior Lieutenant role ID
 
-// Funny delete messages in Dr. Sauce style
+// Funny delete messages in Dr. Sauce style with Reynolds-esque humor
 const DELETE_MESSAGES = [
-  "MEDICAL PROCEDURE COMPLETE! Messages eliminated with surgical precision... and explosives!",
-  "PATIENT STATUS: MESSAGES SUCCESSFULLY AMPUTATED! Side effects may include cleaner chat!",
-  "EXPERIMENTAL TREATMENT SUCCESSFUL! Messages deleted faster than my medical license expired!",
-  "FIELD MEDICINE AT ITS FINEST! Messages removed like shrapnel... messily but effectively!",
-  "DIAGNOSIS: TERMINAL CHAT CONGESTION. PRESCRIPTION: AGGRESSIVE MESSAGE REMOVAL!",
-  "FOR SCIENCE AND SUPER EARTH! Messages deleted with maximum therapeutic force!",
-  "MEDICAL EMERGENCY RESOLVED! Messages eliminated faster than my last patient's trust issues!",
-  "TREATMENT PLAN EXECUTED! Messages removed with the precision of a caffeinated surgeon!",
-  "MEDICAL VICTORY ACHIEVED! Chat cleansed with military-grade disinfectant!",
-  "FIELD TEST SUCCESSFUL! Messages deleted with the subtlety of battlefield triage!"
+  "Oh look, I just performed message deletion surgery! And this time I didn't even set anything on fire... mostly!",
+  "Breaking news: Local doctor discovers revolutionary message deletion technique. Side effects include excessive sarcasm!",
+  "You know what they say - the best medicine is deleting messages and making fourth-wall-breaking jokes about it!",
+  "I'd make a joke about my medical degree, but like these messages, it's probably best we pretend it never existed!",
+  "Messages deleted with the precision of... well, me after WAY too much coffee. But hey, it worked!",
+  "Plot twist: The messages were the disease all along! *winks at camera while holding explosives*",
+  "Congratulations! You've just witnessed the most chaotic message cleanup since my last 'totally authorized' experiment!",
+  "I'm not saying I'm the best at deleting messages, but I'm definitely the most entertaining at failing upwards!",
+  "Messages eliminated! And unlike my attempts at being a serious doctor, this actually worked!",
+  "MAXIMUM EFFORT! *trips over medical equipment while messages dramatically vanish*"
 ];
 
 function saveJSON(path, data) {
@@ -1000,20 +1000,20 @@ module.exports = {
         const hasPermission = message.member.roles.cache.has(JUNIOR_OFFICER_ROLE) || 
                              message.author.id === '603550636545540096';
         
-        if (!hasPermission) {
-          const errorMsg = await message.channel.send("MEDICAL ACCESS DENIED! Your clearance level is lower than my ethical standards!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          return;
-        }
+                  if (!hasPermission) {
+            const errorMsg = await message.channel.send("Look who thinks they're a doctor! Spoiler alert: You're not. And neither am I, technically speaking...");
+            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+            return;
+          }
 
-        const amount = parseInt(args[1]);
-        const validAmounts = [5, 10, 50];
+          const amount = parseInt(args[1]);
+          const validAmounts = [5, 10, 50];
 
-        if (!validAmounts.includes(amount)) {
-          const errorMsg = await message.channel.send("INVALID DOSAGE DETECTED! Prescription must be 5, 10, or 50 CCs of message removal!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          return;
-        }
+          if (!validAmounts.includes(amount)) {
+            const errorMsg = await message.channel.send("Fun fact: Like my medical practice, there are only three numbers I'm legally allowed to work with: 5, 10, or 50!");
+            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+            return;
+          }
 
         try {
           // Delete command message first
@@ -1031,7 +1031,7 @@ module.exports = {
           addToAuditLog(`${formatName(message.author, message.guild)} deleted ${amount} messages in ${message.channel.name}`);
         } catch (error) {
           console.error('Delete error:', error);
-          const errorMsg = await message.channel.send("MEDICAL CATASTROPHE! Operation failed worse than my last experimental surgery!");
+          const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
           setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         }
         break;
