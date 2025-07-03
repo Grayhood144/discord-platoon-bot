@@ -61,15 +61,24 @@ const DELETE_MESSAGES = [
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.1.0",
+  version: "2.1.1",
   lastUpdated: "2024-03-19",
   recentChanges: [
-    "Added Ryan Reynolds style message deletion command",
-    "Added automatic role assignment for new members",
+    "Added hourly Disboard bump reminder",
+    "Simplified $debugroles to show only important roles",
     "Added Dr. Sauce character responses",
-    "Added secret Leo easter egg",
-    "Daily role check at 9:00 AM UTC"
+    "Added automatic role assignment for new members",
+    "Added secret Leo easter egg"
   ]
+};
+
+// Important role IDs to check
+const IMPORTANT_ROLES = {
+  'TRA': '1171577326766866442',
+  'Cadet': '1171577326766866443',
+  'Trainee': '1171577326766866444',
+  'Lieutenant': '1171577326766866445',
+  'Sauce': '1171577326766866446'
 };
 
 function saveJSON(path, data) {
@@ -835,21 +844,18 @@ module.exports = {
           BOT_VERSION.recentChanges.forEach(change => {
             roleList += `• ${change}\n`;
           });
-          roleList += '\n**Server Roles:**\n';
-
-          roles.forEach(role => {
-            roleList += `• ${role.name}: ${role.id}\n`;
-          });
-
-          // Split message if it's too long
-          if (roleList.length > 2000) {
-            const parts = roleList.match(/.{1,1900}/g);
-            for (const part of parts) {
-              await message.channel.send(part);
+          
+          roleList += '\n**Organization Roles Status:**\n';
+          for (const [roleName, roleId] of Object.entries(IMPORTANT_ROLES)) {
+            const role = roles.get(roleId);
+            if (role) {
+              roleList += `✅ ${roleName}: ${role.name} (${role.id})\n`;
+            } else {
+              roleList += `❌ ${roleName}: Role not found (${roleId})\n`;
             }
-          } else {
-            await message.channel.send(roleList);
           }
+
+          await message.channel.send(roleList);
         } catch (error) {
           console.error('Debug roles error:', error);
           const errorMsg = await message.channel.send(`❌ Error listing roles: ${error.message}`);
