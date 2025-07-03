@@ -189,7 +189,7 @@ function shouldDrSauceRespond(message) {
                          message.content.toLowerCase().includes('leo') ||
                          message.content.toLowerCase().includes('leospartan');
     
-    if (hasLeoMention && Math.random() < 0.0000001) {
+    if (hasLeoMention && Math.random() < 0.00001) {
         return 'leo';
     }
 
