@@ -59,6 +59,19 @@ const DELETE_MESSAGES = [
   "Maximum effort! *trips over medical equipment while messages dramatically vanish*"
 ];
 
+// Bot version and changelog
+const BOT_VERSION = {
+  version: "2.1.0",
+  lastUpdated: "2024-03-19",
+  recentChanges: [
+    "Added Ryan Reynolds style message deletion command",
+    "Added automatic role assignment for new members",
+    "Added Dr. Sauce character responses",
+    "Added secret Leo easter egg",
+    "Daily role check at 9:00 AM UTC"
+  ]
+};
+
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
@@ -808,103 +821,38 @@ module.exports = {
       case '$debugroles': {
         if (!isAdmin) {
           const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
           break;
         }
 
         try {
-          // Get version information
-          const packageJson = require('./package.json');
-          const botVersion = packageJson.version;
-          const nodeVersion = process.version;
-          const discordJsVersion = packageJson.dependencies['discord.js'];
+          const roles = message.guild.roles.cache;
+          let roleList = '**Bot Version Info:**\n';
+          roleList += `Version: ${BOT_VERSION.version}\n`;
+          roleList += `Last Updated: ${BOT_VERSION.lastUpdated}\n\n`;
           
-          const allRoles = message.guild.roles.cache;
-          const roleList = [];
-          
-          // Add version information at the top
-          roleList.push(`**🤖 Bot Version Information:**`);
-          roleList.push(`• Bot Version: ${botVersion}`);
-          roleList.push(`• Node.js Version: ${nodeVersion}`);
-          roleList.push(`• Discord.js Version: ${discordJsVersion}`);
-          roleList.push(`• Testing Mode: ${testingMode ? 'Enabled' : 'Disabled'}`);
-          roleList.push(`• Server: ${message.guild.name} (${message.guild.id})`);
-          roleList.push(`• Members: ${message.guild.memberCount}`);
-          
-          // Check subsection roles
-          roleList.push('\n**Subsection Roles:**');
-          for (const [subName, sub] of Object.entries(subsections)) {
-            if (subName === '_intro') continue;
-            const role = allRoles.get(sub.roleID);
-            if (role) {
-              roleList.push(`✅ ${subName}: ${role.name} (${role.id})`);
-            } else {
-              roleList.push(`❌ ${subName}: Role not found (${sub.roleID})`);
-            }
-          }
-          
-          roleList.push('\n**Platoon Leader Roles:**');
-          for (const [subName, roleID] of Object.entries(PLATOON_LEADER_ROLES)) {
-            const role = allRoles.get(roleID);
-            if (role) {
-              roleList.push(`✅ ${subName}: ${role.name} (${role.id})`);
-            } else {
-              roleList.push(`❌ ${subName}: Role not found (${roleID})`);
-            }
-          }
-          
-          roleList.push('\n**Platoon Leadership Roles:**');
-          const platoonLeaderRole = allRoles.get(PLATOON_LEADER_ROLE);
-          const platoonInstructorRole = allRoles.get(PLATOON_INSTRUCTOR_ROLE);
-          
-          if (platoonLeaderRole) {
-            roleList.push(`✅ Platoon Leader: ${platoonLeaderRole.name} (${platoonLeaderRole.id})`);
-          } else {
-            roleList.push(`❌ Platoon Leader: Role not found (${PLATOON_LEADER_ROLE})`);
-          }
-          
-          if (platoonInstructorRole) {
-            roleList.push(`✅ Platoon Instructor: ${platoonInstructorRole.name} (${platoonInstructorRole.id})`);
-          } else {
-            roleList.push(`❌ Platoon Instructor: Role not found (${PLATOON_INSTRUCTOR_ROLE})`);
-          }
-          
-          roleList.push('\n**Admin Roles:**');
-          for (const roleID of ADMIN_IDS) {
-            const role = allRoles.get(roleID);
-            if (role) {
-              roleList.push(`✅ Admin: ${role.name} (${role.id})`);
-            } else {
-              roleList.push(`❌ Admin: Role not found (${roleID})`);
-            }
-          }
-          
-          roleList.push('\n**Sync Access Roles:**');
-          for (const roleID of SYNC_ACCESS) {
-            const role = allRoles.get(roleID);
-            if (role) {
-              roleList.push(`✅ Sync: ${role.name} (${role.id})`);
-            } else {
-              roleList.push(`❌ Sync: Role not found (${roleID})`);
-            }
-          }
+          roleList += '**Recent Changes:**\n';
+          BOT_VERSION.recentChanges.forEach(change => {
+            roleList += `• ${change}\n`;
+          });
+          roleList += '\n**Server Roles:**\n';
 
-          // Add veterancy roles
-          roleList.push('\n**Veterancy Roles:**');
-          for (const [degree, roleID] of Object.entries(VETERANCY_ROLES)) {
-            const role = allRoles.get(roleID);
-            if (role) {
-              roleList.push(`✅ ${degree}: ${role.name} (${role.id})`);
-            } else {
-              roleList.push(`❌ ${degree}: Role not found (${roleID})`);
-            }
-          }
+          roles.forEach(role => {
+            roleList += `• ${role.name}: ${role.id}\n`;
+          });
 
-          const debugMsg = await message.channel.send(roleList.join('\n'));
-          setTimeout(() => debugMsg.delete().catch(() => {}), 30000);
+          // Split message if it's too long
+          if (roleList.length > 2000) {
+            const parts = roleList.match(/.{1,1900}/g);
+            for (const part of parts) {
+              await message.channel.send(part);
+            }
+          } else {
+            await message.channel.send(roleList);
+          }
         } catch (error) {
           console.error('Debug roles error:', error);
-          const errorMsg = await message.channel.send(`❌ Error checking roles: ${error.message}`);
+          const errorMsg = await message.channel.send(`❌ Error listing roles: ${error.message}`);
           setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
         }
         break;
