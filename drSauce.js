@@ -1,5 +1,6 @@
 // drSauce.js - A chaotic field doctor from Helldivers 2
 const SAUCE_USER_ID = '603550636545540096';
+const LEO_USER_ID = '544946624506495009';
 
 // Quote categories with 20 quotes each
 const STARTERS = [
@@ -145,6 +146,10 @@ function getRandomQuote(array) {
 }
 
 function generateDrSauceResponse(mentionType = 'normal') {
+    if (mentionType === 'leo') {
+        return "Leospartan wuz here";
+    }
+
     let response = '';
 
     // Add starter
@@ -178,6 +183,15 @@ function shouldDrSauceRespond(message) {
     
     // Check if the specific user is mentioned
     const hasUserMention = message.mentions.users.has(SAUCE_USER_ID);
+
+    // Check for Leo mention (extremely rare response)
+    const hasLeoMention = message.mentions.users.has(LEO_USER_ID) || 
+                         message.content.toLowerCase().includes('leo') ||
+                         message.content.toLowerCase().includes('leospartan');
+    
+    if (hasLeoMention && Math.random() < 0.0000001) {
+        return 'leo';
+    }
 
     // 30% chance to respond if conditions are met
     return (hasSauceMention || hasUserMention) && Math.random() < 0.3;

@@ -88,9 +88,10 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   // Check if Dr. Sauce should respond
-  if (drSauce.shouldDrSauceRespond(message)) {
-    const response = drSauce.generateDrSauceResponse();
-    await message.channel.send(response);
+  const response = drSauce.shouldDrSauceRespond(message);
+  if (response) {
+    const drSauceResponse = drSauce.generateDrSauceResponse(response);
+    await message.channel.send(drSauceResponse);
     return;
   }
 
