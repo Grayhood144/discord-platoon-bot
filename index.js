@@ -8,6 +8,13 @@ const handleMessageCleanup = require('./messageCleaner');
 const commandModule = require('./commands');
 const drSauce = require('./drSauce');
 
+// Role IDs for new members
+const NEW_MEMBER_ROLES = {
+  'tra': '1305993273386729532',
+  'cadet': '1295543221530787870',
+  'trainee': '1295546993736679536'
+};
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -21,6 +28,60 @@ const client = new Client({
 
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+  
+  // Set up daily role check at 9:00 AM UTC
+  const now = new Date();
+  const target = new Date();
+  target.setUTCHours(9, 0, 0, 0);
+  if (now > target) target.setDate(target.getDate() + 1);
+  
+  const timeUntilFirstCheck = target.getTime() - now.getTime();
+  
+  // Schedule first check
+  setTimeout(() => {
+    checkAllMemberRoles();
+    // Then schedule it to run every 24 hours
+    setInterval(checkAllMemberRoles, 24 * 60 * 60 * 1000);
+  }, timeUntilFirstCheck);
+});
+
+// Function to check and assign roles for a single member
+async function checkAndAssignNewMemberRoles(member) {
+  try {
+    for (const [roleName, roleId] of Object.entries(NEW_MEMBER_ROLES)) {
+      if (!member.roles.cache.has(roleId)) {
+        await member.roles.add(roleId);
+        console.log(`✅ Assigned ${roleName} role to ${member.user.username}`);
+      }
+    }
+  } catch (error) {
+    console.error(`Error assigning roles to ${member.user.username}:`, error);
+  }
+}
+
+// Function to check all members' roles
+async function checkAllMemberRoles() {
+  console.log('🔄 Starting daily role check...');
+  try {
+    const guilds = client.guilds.cache;
+    for (const guild of guilds.values()) {
+      const members = await guild.members.fetch();
+      for (const member of members.values()) {
+        if (!member.user.bot) {
+          await checkAndAssignNewMemberRoles(member);
+        }
+      }
+    }
+    console.log('✅ Daily role check completed');
+  } catch (error) {
+    console.error('Error during daily role check:', error);
+  }
+}
+
+// Handle new member joins
+client.on('guildMemberAdd', async (member) => {
+  if (member.user.bot) return;
+  await checkAndAssignNewMemberRoles(member);
 });
 
 client.on('messageCreate', async (message) => {
