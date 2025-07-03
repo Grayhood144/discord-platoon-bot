@@ -43,6 +43,22 @@ const ADD_ROLES = {
   'dashes': '1305993620049887323'
 };
 
+const JUNIOR_OFFICER_ROLE = '1295544720222589069'; // Junior Lieutenant role ID
+
+// Funny delete messages in Ryan Reynolds style
+const DELETE_MESSAGES = [
+  "Maximum effort! Messages deleted faster than Deadpool's healing factor.",
+  "Just like my movie career, these messages are gone but not forgotten... actually, they're totally forgotten.",
+  "Poof! Messages vanished like my dreams of a Green Lantern sequel.",
+  "Messages deleted with the precision of a well-crafted gin commercial.",
+  "Those messages just got Deadpool'd! *breaks fourth wall and winks*",
+  "Messages eliminated with the grace of me attempting parkour... which is none.",
+  "Like my attempts at superhero landings, these messages are history!",
+  "Messages? What messages? I only see a clean chat and my charming personality.",
+  "Consider those messages as gone as my ability to play any role without sarcasm.",
+  "Messages deleted faster than I can make a self-deprecating joke!"
+];
+
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
@@ -362,10 +378,12 @@ module.exports = {
           `• \`$veterancy all\` — Check and assign veterancy roles for all members\n` +
           `• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n` +
           
+          `**Message Management**\n` +
+          `• \`$delete 5/10/50\` — Delete messages (Lieutenant+ only)\n\n` +
+          
           `**Automatic Features**\n` +
           `• New members automatically receive TRA, Cadet, and Trainee roles\n` +
-          `• Daily role check at 9:00 AM UTC ensures all members have required roles\n` +
-          `• Dr. Sauce responds to messages containing "sauce" or when pinged (30% chance)\n\n` +
+          `• Daily role check at 9:00 AM UTC ensures all members have required roles\n\n` +
           
           `**Admin Commands** (Restricted to @S or Admins)\n` +
           `• \`$$deploy true/false\` — Enable or disable testing mode.\n` +
@@ -972,6 +990,49 @@ module.exports = {
           await message.reply(`✅ Nickname changed to **${newNick}**`);
         } catch (err) {
           await message.reply('❌ Failed to change nickname. Do I have the right permissions?');
+        }
+        break;
+      }
+
+      // Add new case for $delete command
+      case '$delete': {
+        // Check if user has permission (Lieutenant or Sauce)
+        const hasPermission = message.member.roles.cache.has(JUNIOR_OFFICER_ROLE) || 
+                             message.author.id === '603550636545540096';
+        
+        if (!hasPermission) {
+          const errorMsg = await message.channel.send("Nice try! But like my attempts at being serious, that didn't work out.");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          return;
+        }
+
+        const amount = parseInt(args[1]);
+        const validAmounts = [5, 10, 50];
+
+        if (!validAmounts.includes(amount)) {
+          const errorMsg = await message.channel.send("Hey, like my movie choices, let's stick to the script! Use 5, 10, or 50.");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          return;
+        }
+
+        try {
+          // Delete command message first
+          await message.delete();
+
+          // Then bulk delete the specified amount
+          const messages = await message.channel.messages.fetch({ limit: amount });
+          await message.channel.bulkDelete(messages);
+
+          // Send success message with random funny quote
+          const successMsg = await message.channel.send(DELETE_MESSAGES[Math.floor(Math.random() * DELETE_MESSAGES.length)]);
+          setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+
+          // Add to audit log
+          addToAuditLog(`${formatName(message.author, message.guild)} deleted ${amount} messages in ${message.channel.name}`);
+        } catch (error) {
+          console.error('Delete error:', error);
+          const errorMsg = await message.channel.send("Well, that failed harder than Green Lantern at the box office!");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         }
         break;
       }
