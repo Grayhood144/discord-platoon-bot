@@ -179,8 +179,8 @@ function shouldDrSauceRespond(message) {
     // Check if the specific user is mentioned
     const hasUserMention = message.mentions.users.has(SAUCE_USER_ID);
 
-    // 30% chance to respond if conditions are met
-    return (hasSauceMention || hasUserMention) && Math.random() < 0.3;
+    // 50% chance to respond if conditions are met
+    return (hasSauceMention || hasUserMention) && Math.random() < 0.5;
 }
 
 module.exports = {
