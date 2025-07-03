@@ -351,7 +351,30 @@ module.exports = {
 
     switch (cmd) {
       case '$help': {
-        const helpText = `**Subsection Bot Command List**\n\n**General Commands**\n• \`deploy\` — Shows the full subsection layout.\n• \`$sync\` — Updates all members in each subsection based on Discord roles.\n• \`$help\` — Displays this help message.\n\n**Veterancy Commands**\n• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n• \`$veterancy all\` — Check and assign veterancy roles for all members\n• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n**Admin Commands** (Restricted to @S or Admins)\n• \`$$deploy true/false\` — Enable or disable testing mode.\n• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n• \`$auditlog\` — View audit log.\n• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n• \`$clearcommands\` — Deletes all command messages.\n• \`$debugroles\` — List all roles in the server.\n• \`$eval @user rank\` — Promote a member to a specific rank.`;
+        const helpText = `**Subsection Bot Command List**\n\n` +
+          `**General Commands**\n` +
+          `• \`deploy\` — Shows the full subsection layout.\n` +
+          `• \`$sync\` — Updates all members in each subsection based on Discord roles.\n` +
+          `• \`$help\` — Displays this help message.\n\n` +
+          
+          `**Veterancy Commands**\n` +
+          `• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n` +
+          `• \`$veterancy all\` — Check and assign veterancy roles for all members\n` +
+          `• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n` +
+          
+          `**Automatic Features**\n` +
+          `• New members automatically receive TRA, Cadet, and Trainee roles\n` +
+          `• Daily role check at 9:00 AM UTC ensures all members have required roles\n` +
+          `• Dr. Sauce responds to messages containing "sauce" or when pinged (30% chance)\n\n` +
+          
+          `**Admin Commands** (Restricted to @S or Admins)\n` +
+          `• \`$$deploy true/false\` — Enable or disable testing mode.\n` +
+          `• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n` +
+          `• \`$auditlog\` — View audit log.\n` +
+          `• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n` +
+          `• \`$clearcommands\` — Deletes all command messages.\n` +
+          `• \`$debugroles\` — List all roles in the server.\n` +
+          `• \`$eval @user rank\` — Promote a member to a specific rank.`;
         
         const sentMsg = await message.channel.send(helpText);
         setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
