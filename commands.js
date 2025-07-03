@@ -45,18 +45,18 @@ const ADD_ROLES = {
 
 const JUNIOR_OFFICER_ROLE = '1295544720222589069'; // Junior Lieutenant role ID
 
-// Funny delete messages in Dr. Sauce style with Reynolds-esque humor
+// Funny delete messages with casual Reynolds-style humor
 const DELETE_MESSAGES = [
-  "Oh look, I just performed message deletion surgery! And this time I didn't even set anything on fire... mostly!",
-  "Breaking news: Local doctor discovers revolutionary message deletion technique. Side effects include excessive sarcasm!",
-  "You know what they say - the best medicine is deleting messages and making fourth-wall-breaking jokes about it!",
+  "Just performed some message deletion surgery! And this time I only set three things on fire... progress!",
+  "Breaking news: Local doctor discovers revolutionary message deletion technique. Side effects may include excessive sarcasm!",
+  "You know what they say - the best medicine is deleting messages and making jokes about it! *winks at camera*",
   "I'd make a joke about my medical degree, but like these messages, it's probably best we pretend it never existed!",
   "Messages deleted with the precision of... well, me after WAY too much coffee. But hey, it worked!",
-  "Plot twist: The messages were the disease all along! *winks at camera while holding explosives*",
-  "Congratulations! You've just witnessed the most chaotic message cleanup since my last 'totally authorized' experiment!",
-  "I'm not saying I'm the best at deleting messages, but I'm definitely the most entertaining at failing upwards!",
+  "Plot twist: The messages were the disease all along! *casually juggles medical supplies*",
+  "Congratulations! You've witnessed the most chaotic message cleanup since my last 'totally authorized' experiment!",
+  "Not saying I'm the best at deleting messages, but I'm definitely the most entertaining at failing upwards!",
   "Messages eliminated! And unlike my attempts at being a serious doctor, this actually worked!",
-  "MAXIMUM EFFORT! *trips over medical equipment while messages dramatically vanish*"
+  "Maximum effort! *trips over medical equipment while messages dramatically vanish*"
 ];
 
 function saveJSON(path, data) {
@@ -1001,7 +1001,7 @@ module.exports = {
                              message.author.id === '603550636545540096';
         
                   if (!hasPermission) {
-            const errorMsg = await message.channel.send("Look who thinks they're a doctor! Spoiler alert: You're not. And neither am I, technically speaking...");
+            const errorMsg = await message.channel.send("Whoa there, wannabe doctor! *adjusts imaginary glasses* I'm afraid your medical license is about as real as mine!");
             setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
             return;
           }
@@ -1010,7 +1010,7 @@ module.exports = {
           const validAmounts = [5, 10, 50];
 
           if (!validAmounts.includes(amount)) {
-            const errorMsg = await message.channel.send("Fun fact: Like my medical practice, there are only three numbers I'm legally allowed to work with: 5, 10, or 50!");
+            const errorMsg = await message.channel.send("Pro tip: My totally legitimate medical license only allows me to work with 5, 10, or 50. Don't ask why, long story...");
             setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
             return;
           }
