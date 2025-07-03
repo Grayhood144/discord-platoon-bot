@@ -5,6 +5,7 @@ const subsections = require('./subsections.json');
 const userRoles = require('./userRoles.json');
 const deployPath = './deployMessages.json';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const drSauce = require('./drSauce');
 
 let auditLog = [];
 let testingMode = false;
@@ -951,6 +952,13 @@ module.exports = {
           await message.reply('❌ Failed to change nickname. Do I have the right permissions?');
         }
         break;
+      }
+
+      // Dr. Sauce's $METH command
+      case '$meth': {
+        const response = drSauce.generateDrSauceResponse();
+        await message.channel.send(response);
+        return;
       }
     }
   }
