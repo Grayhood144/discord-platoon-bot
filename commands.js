@@ -1037,9 +1037,7 @@ module.exports = {
               console.log('Comparing emojis:', {
                 reaction: reactionEmoji,
                 faction: faction.emoji,
-                matches: matches,
-                unicodeReaction: reaction.emoji.toString(),
-                unicodeFaction: faction.emoji.toString()
+                matches: matches
               });
               
               return matches;
@@ -1049,7 +1047,7 @@ module.exports = {
             return matches;
           };
 
-          const collector = roleMessage.createReactionCollector({ filter, dispose: false });
+          const collector = roleMessage.createReactionCollector({ filter });
 
           collector.on('collect', async (reaction, user) => {
             try {
@@ -1065,26 +1063,6 @@ module.exports = {
                 memberRoles: Array.from(member.roles.cache.keys())
               });
 
-              // Check bot's role position compared to the roles it's trying to manage
-              const botRole = message.guild.members.cache.get(client.user.id).roles.highest;
-              const targetRoles = Object.values(SUBFACTION_ROLES).map(f => message.guild.roles.cache.get(f.id));
-              
-              console.log('Role hierarchy check:', {
-                botRolePosition: botRole.position,
-                targetRolePositions: targetRoles.map(r => ({ name: r?.name, position: r?.position }))
-              });
-              
-              const cannotManage = targetRoles.some(role => role && role.position >= botRole.position);
-              
-              if (cannotManage) {
-                console.error('Bot role position is too low to manage subfaction roles');
-                const errorMsg = await message.channel.send(
-                  "*Adjusts glasses nervously* I can't modify these roles because they're higher than my role in the hierarchy!"
-                );
-                setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-                return;
-              }
-              
               // Find the selected faction by matching emoji
               const selectedFaction = Object.values(SUBFACTION_ROLES).find(faction => {
                 const reactionEmoji = reaction.emoji.name;
