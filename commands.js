@@ -454,7 +454,8 @@ module.exports = {
           `• \`$clearcommands\` — Deletes all command messages.\n` +
           `• \`$debugroles\` — List all roles in the server.\n` +
           `• \`$eval @user rank\` — Promote a member to a specific rank.\n` +
-          `• \`$reaction\` — Create an organization role selector (Dr. Sauce only).`;
+          `• \`$reaction\` — Create an organization role selector (Dr. Sauce only).\n` +
+          `• \`$fixed\` — Remove Cadet/TRA/Trainee roles from members (Dr. Sauce only).`;
         
         const sentMsg = await message.channel.send(helpText);
         setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
@@ -1107,6 +1108,73 @@ module.exports = {
         } catch (error) {
           console.error('Delete error:', error);
           const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        }
+        break;
+      }
+
+      case '$fixed': {
+        // Check if user is Sauce
+        if (authorID !== '603550636545540096') {
+          const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can run this fix!");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        try {
+          const statusMsg = await message.channel.send("🔄 *Puts on surgical gloves* Starting the role cleanup operation...");
+          
+          // Fetch all guild members
+          await message.guild.members.fetch();
+          const members = message.guild.members.cache;
+          
+          let fixedCount = 0;
+          let processedCount = 0;
+          
+          // Process each member
+          for (const [memberId, member] of members) {
+            if (member.user.bot) continue; // Skip bots
+            
+            processedCount++;
+            
+            // Check if member has the Member role
+            if (member.roles.cache.has(MEMBER_ROLE)) {
+              let rolesRemoved = false;
+              
+              // Remove the specified roles if they have them
+              for (const [roleName, roleId] of Object.entries(REMOVE_FROM_MEMBERS)) {
+                if (member.roles.cache.has(roleId)) {
+                  await member.roles.remove(roleId);
+                  rolesRemoved = true;
+                }
+              }
+              
+              if (rolesRemoved) {
+                fixedCount++;
+                // Update status message every 10 members fixed
+                if (fixedCount % 10 === 0) {
+                  await statusMsg.edit(`🔄 *Adjusting roles...* Fixed ${fixedCount} members so far...`);
+                }
+              }
+            }
+          }
+
+          // Send completion message
+          const completionMsg = await message.channel.send(
+            `✅ *Removes gloves* Operation complete! I've processed ${processedCount} members and fixed ${fixedCount} of them.\n` +
+            `*Note: Removed Cadet, TRA, and Trainee roles from members who shouldn't have them.*`
+          );
+          
+          // Add to audit log
+          addToAuditLog(`${formatName(message.author, message.guild)} ran the fix command and cleaned up roles for ${fixedCount} members`);
+          
+          // Delete status message after completion
+          setTimeout(() => statusMsg.delete().catch(() => {}), 5000);
+          setTimeout(() => completionMsg.delete().catch(() => {}), 15000);
+
+        } catch (error) {
+          console.error('Fix command error:', error);
+          const errorMsg = await message.channel.send("*Drops medical equipment* Oops! Something went wrong during the operation!");
           setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         }
         break;
