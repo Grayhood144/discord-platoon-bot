@@ -984,7 +984,7 @@ module.exports = {
         try {
           // Check bot permissions
           const botMember = message.guild.members.cache.get(client.user.id);
-          if (!botMember.permissions.has('MANAGE_ROLES')) {
+          if (!botMember.permissions.has('ManageRoles')) {
             const errorMsg = await message.channel.send("*Panics* I don't have permission to manage roles! Please give me the 'Manage Roles' permission!");
             setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
             return;
