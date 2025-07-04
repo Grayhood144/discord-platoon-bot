@@ -982,6 +982,14 @@ module.exports = {
         }
 
         try {
+          // Check bot permissions
+          const botMember = message.guild.members.cache.get(client.user.id);
+          if (!botMember.permissions.has('MANAGE_ROLES')) {
+            const errorMsg = await message.channel.send("*Panics* I don't have permission to manage roles! Please give me the 'Manage Roles' permission!");
+            setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+            return;
+          }
+
           // Create the subfaction selection message
           let messageContent = "**🏥 Welcome to Dr. Sauce's Subfaction Selector! 🏥**\n\n" +
                              "React with the appropriate emoji to select your subfaction:\n\n";
@@ -1008,6 +1016,8 @@ module.exports = {
 
           // Set up reaction collector
           const filter = (reaction, user) => {
+            if (user.bot) return false;
+
             // Debug logging
             console.log('Reaction received:', {
               emoji: reaction.emoji.name,
@@ -1018,7 +1028,8 @@ module.exports = {
 
             // Check if the reaction emoji matches any of our subfaction emojis
             const matches = Object.values(SUBFACTION_ROLES).some(faction => {
-              const reactionEmoji = reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name;
+              // Get the actual emoji character from the reaction
+              const reactionEmoji = reaction.emoji.name;
               const matches = reactionEmoji === faction.emoji;
               
               // Debug logging for emoji matching
@@ -1031,7 +1042,7 @@ module.exports = {
               return matches;
             });
 
-            return matches && !user.bot;
+            return matches;
           };
 
           const collector = roleMessage.createReactionCollector({ filter });
@@ -1047,17 +1058,32 @@ module.exports = {
                 userId: user.id,
                 member: member.id
               });
+
+              // Check bot's role position compared to the roles it's trying to manage
+              const botRole = message.guild.members.cache.get(client.user.id).roles.highest;
+              const targetRoles = Object.values(SUBFACTION_ROLES).map(f => message.guild.roles.cache.get(f.id));
+              const cannotManage = targetRoles.some(role => role && role.position >= botRole.position);
+              
+              if (cannotManage) {
+                console.error('Bot role position is too low to manage subfaction roles');
+                const errorMsg = await message.channel.send(
+                  "*Adjusts glasses nervously* I can't modify these roles because they're higher than my role in the hierarchy!"
+                );
+                setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+                return;
+              }
               
               // Find the selected faction by matching emoji
               const selectedFaction = Object.values(SUBFACTION_ROLES).find(faction => {
-                const reactionEmoji = reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name;
+                const reactionEmoji = reaction.emoji.name;
                 const matches = reactionEmoji === faction.emoji;
                 
                 // Debug logging for faction matching
                 console.log('Matching faction:', {
                   reaction: reactionEmoji,
                   faction: faction.emoji,
-                  matches: matches
+                  matches: matches,
+                  factionId: faction.id
                 });
                 
                 return matches;
@@ -1076,6 +1102,17 @@ module.exports = {
                 // Continue anyway as this isn't critical
               }
 
+              // Verify the role exists
+              const roleToAdd = message.guild.roles.cache.get(selectedFaction.id);
+              if (!roleToAdd) {
+                console.error(`Role ${selectedFaction.id} not found in guild`);
+                const errorMsg = await message.channel.send(
+                  `*Scratches head* I can't find the role for ${selectedFaction.name}. Please make sure it exists!`
+                );
+                setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+                return;
+              }
+
               // Check if they already have this role
               if (member.roles.cache.has(selectedFaction.id)) {
                 const infoMsg = await message.channel.send(
@@ -1089,18 +1126,36 @@ module.exports = {
               let removedRoles = [];
               for (const faction of Object.values(SUBFACTION_ROLES)) {
                 if (member.roles.cache.has(faction.id)) {
-                  await member.roles.remove(faction.id);
-                  removedRoles.push(faction.name);
+                  try {
+                    await member.roles.remove(faction.id);
+                    removedRoles.push(faction.name);
+                  } catch (error) {
+                    console.error(`Failed to remove role ${faction.name}:`, error);
+                  }
                 }
               }
 
               // Add the selected role
-              await member.roles.add(selectedFaction.id);
+              try {
+                await member.roles.add(selectedFaction.id);
+                console.log(`Added role ${selectedFaction.name} to ${member.user.username}`);
+              } catch (error) {
+                console.error(`Failed to add role ${selectedFaction.name}:`, error);
+                const errorMsg = await message.channel.send(
+                  `*Drops clipboard* Failed to add the ${selectedFaction.name} role! Error: ${error.message}`
+                );
+                setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+                return;
+              }
 
               // Add the organization role if they don't have it
               if (!member.roles.cache.has(ORGANIZATION_ROLE)) {
-                await member.roles.add(ORGANIZATION_ROLE);
-                console.log(`Added organization role to ${member.user.username}`);
+                try {
+                  await member.roles.add(ORGANIZATION_ROLE);
+                  console.log(`Added organization role to ${member.user.username}`);
+                } catch (error) {
+                  console.error('Failed to add organization role:', error);
+                }
               }
 
               // Send success message
@@ -1125,7 +1180,7 @@ module.exports = {
                 `*Drops clipboard* Oops! Something went wrong assigning the role for ${user}. Please try again later!\n` +
                 `Error: ${error.message}`
               );
-              setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+              setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
             }
           });
 
@@ -1140,7 +1195,7 @@ module.exports = {
             "*Fumbles with medical equipment* Oh no! Something went wrong creating the role selector!\n" +
             `Error: ${error.message}`
           );
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
         }
         break;
       }
