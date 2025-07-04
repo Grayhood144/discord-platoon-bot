@@ -14,11 +14,11 @@ module.exports = async function cleanMessage(message, client) {
   // Auto-delete command messages (excluding raw 'deploy')
   const commandPrefixes = ['$', '$$'];
   const validCommands = [
-  '$deploy', '$sync', '$help', '$Instructor', '$officer',
-  '$clear', '$auditlog', '$clearall', '$clearcommands',
-  '$$deploy', 'SauceTest14405', 'SauceTestend14405'
-];
-
+    '$deploy', '$sync', '$help', '$Instructor', '$officer',
+    '$clear', '$auditlog', '$clearall', '$clearcommands',
+    '$reaction', '$fixed', '$eval', '$delete', '$nick',
+    '$$deploy', 'SauceTest14405', 'SauceTestend14405'
+  ];
 
   const isCommand = commandPrefixes.some(prefix => content.startsWith(prefix)) && validCommands.some(cmd => content.startsWith(cmd));
   if (isCommand) {
@@ -36,7 +36,11 @@ module.exports = async function cleanMessage(message, client) {
 
   // Auto-delete confirmation and error messages
   const quickDeleteTriggers = [
-    'added as', 'removed from', 'Cleared', 'synced', 'activated', 'ended', 'Audit Log', 'deleted', 'Incorrect password', 'You are not authorized'
+    'added as', 'removed from', 'Cleared', 'synced', 'activated', 'ended', 'Audit Log', 'deleted', 'Incorrect password', 'You are not authorized',
+    'Adjusts lab coat', 'Adjusts stethoscope', 'Checks clipboard', 'Drops clipboard', 'Fumbles with medical equipment',
+    'Successfully promoted', 'Error executing command', 'Invalid command format', 'Invalid rank',
+    'role cleanup operation', 'roles have been fixed', 'Something went wrong assigning the role',
+    'Pro tip: My totally legitimate medical license', 'Whoa there, wannabe doctor'
   ];
 
   for (const trigger of quickDeleteTriggers) {
