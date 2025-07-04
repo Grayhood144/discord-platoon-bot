@@ -1403,6 +1403,49 @@ const commands = async (message, client) => {
       break;
     }
 
+    case '$roleinfo': {
+      try {
+        const infoEmbed = {
+          color: 0x1E90FF,  // A nice medical blue color
+          title: '🏥 Dr. Sauce\'s Guide to Joining Factions',
+          description: '*Adjusts glasses* Let me explain how our faction system works!',
+          fields: [
+            {
+              name: '📋 Available Factions',
+              value: Object.values(SUBFACTION_ROLES).map(faction => 
+                `${faction.emoji} **${faction.name}** - Join with \`$${faction.name.toLowerCase().replace(/\./g, '')}\``
+              ).join('\n'),
+              inline: false
+            },
+            {
+              name: '⚕️ How to Join',
+              value: 'Simply use the command for the faction you want to join. For example:\n`$meth` to join M.E.T.H.\n`$geneva` to join G.E.N.E.V.A.',
+              inline: false
+            },
+            {
+              name: '❗ Important Notes',
+              value: '• You can only be in one faction at a time\n• Joining a new faction will remove you from your current faction\n• The Organization role will be automatically added if you don\'t have it',
+              inline: false
+            },
+            {
+              name: '🔍 Need Help?',
+              value: 'Use `$factions` to see a simple list of all faction commands',
+              inline: false
+            }
+          ],
+          footer: {
+            text: 'Remember: Choose the faction that best suits your playstyle!'
+          }
+        };
+
+        await message.channel.send({ embeds: [infoEmbed] });
+      } catch (error) {
+        console.error('Error showing role info:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
     // HIDDEN: $nick command for owner only
     case '$nick': {
       if (authorID !== '603550636545540096') break; // Only allow owner
