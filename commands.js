@@ -81,6 +81,45 @@ const IMPORTANT_ROLES = {
   'Sauce': '1171577326766866446'
 };
 
+// Subfaction roles
+const SUBFACTION_ROLES = {
+  'RETICLE': {
+    emoji: '🎯',
+    name: 'R.E.T.I.C.L.E.',
+    id: '1336145271213527140'
+  },
+  'CALIBRE': {
+    emoji: '🔫',
+    name: 'C.A.L.I.B.R.E.',
+    id: '1336145407444783177'
+  },
+  'DIESEL': {
+    emoji: '🛢️',
+    name: 'D.I.E.S.E.L.',
+    id: '1336145474721419345'
+  },
+  'STALKER': {
+    emoji: '👁️',
+    name: 'S.T.A.L.K.E.R.',
+    id: '1336145558917615637'
+  },
+  'METH': {
+    emoji: '💊',
+    name: 'M.E.T.H.',
+    id: '1336145646779891732'
+  },
+  'GENEVA': {
+    emoji: '🏥',
+    name: 'G.E.N.E.V.A.',
+    id: '1336145717978468352'
+  },
+  'STATIC': {
+    emoji: '⚡',
+    name: 'S.T.A.T.I.C.',
+    id: '1383685207311384616'
+  }
+};
+
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
@@ -414,7 +453,8 @@ module.exports = {
           `• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n` +
           `• \`$clearcommands\` — Deletes all command messages.\n` +
           `• \`$debugroles\` — List all roles in the server.\n` +
-          `• \`$eval @user rank\` — Promote a member to a specific rank.`;
+          `• \`$eval @user rank\` — Promote a member to a specific rank.\n` +
+          `• \`$reaction\` — Create an organization role selector (Dr. Sauce only).`;
         
         const sentMsg = await message.channel.send(helpText);
         setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
@@ -926,6 +966,87 @@ module.exports = {
         } catch (error) {
           console.error('Eval command error:', error);
           const errorMsg = await message.channel.send(`❌ Error executing command: ${error.message}`);
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        }
+        break;
+      }
+
+      case '$reaction': {
+        // Check if user is Sauce
+        if (authorID !== '603550636545540096') {
+          const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can deploy the role selector!");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        try {
+          // Create the subfaction selection message
+          let messageContent = "**🏥 Welcome to Dr. Sauce's Subfaction Selector! 🏥**\n\n" +
+                             "React with the appropriate emoji to select your subfaction:\n\n";
+          
+          // Add subfaction descriptions
+          for (const faction of Object.values(SUBFACTION_ROLES)) {
+            messageContent += `${faction.emoji} - ${faction.name}\n`;
+          }
+          
+          messageContent += "\n*Note: You can only be in one subfaction at a time.*";
+
+          // Send the message and add reactions
+          const roleMessage = await message.channel.send(messageContent);
+          
+          // Add all reactions
+          for (const faction of Object.values(SUBFACTION_ROLES)) {
+            await roleMessage.react(faction.emoji);
+          }
+
+          // Set up reaction collector
+          const filter = (reaction, user) => {
+            return Object.values(SUBFACTION_ROLES).some(f => f.emoji === reaction.emoji.name) && !user.bot;
+          };
+
+          const collector = roleMessage.createReactionCollector({ filter });
+
+          collector.on('collect', async (reaction, user) => {
+            try {
+              const member = await message.guild.members.fetch(user.id);
+              const selectedFaction = Object.values(SUBFACTION_ROLES).find(f => f.emoji === reaction.emoji.name);
+              
+              if (!selectedFaction) return;
+
+              // Remove user's reaction
+              await reaction.users.remove(user);
+
+              // Remove all other subfaction roles
+              for (const faction of Object.values(SUBFACTION_ROLES)) {
+                if (member.roles.cache.has(faction.id)) {
+                  await member.roles.remove(faction.id);
+                }
+              }
+
+              // Add the selected role
+              await member.roles.add(selectedFaction.id);
+
+              // Send success message
+              const successMsg = await message.channel.send(
+                `*Adjusts stethoscope* ${user}, you've been assigned to ${selectedFaction.name}! 🎉`
+              );
+              setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+
+              // Add to audit log
+              addToAuditLog(`${formatName(user, message.guild)} selected the ${selectedFaction.name} subfaction`);
+
+            } catch (error) {
+              console.error('Role assignment error:', error);
+              const errorMsg = await message.channel.send(
+                `*Drops clipboard* Oops! Something went wrong assigning the role for ${user}. Please try again later!`
+              );
+              setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+            }
+          });
+
+        } catch (error) {
+          console.error('Role selector creation error:', error);
+          const errorMsg = await message.channel.send("*Fumbles with medical equipment* Oh no! Something went wrong creating the role selector!");
           setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         }
         break;
