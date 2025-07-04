@@ -1007,14 +1007,30 @@ module.exports = {
 
           // Set up reaction collector
           const filter = (reaction, user) => {
+            // Debug logging
+            console.log('Reaction received:', {
+              emoji: reaction.emoji.name,
+              emojiId: reaction.emoji.id,
+              userId: user.id,
+              isBot: user.bot
+            });
+
             // Check if the reaction emoji matches any of our subfaction emojis
-            return Object.values(SUBFACTION_ROLES).some(f => {
-              // Handle both Unicode emoji and custom emoji cases
+            const matches = Object.values(SUBFACTION_ROLES).some(faction => {
               const reactionEmoji = reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name;
-              const factionEmoji = faction.emoji;
-              return reactionEmoji === factionEmoji || 
-                     reactionEmoji === factionEmoji.codePointAt(0).toString();
-            }) && !user.bot;
+              const matches = reactionEmoji === faction.emoji;
+              
+              // Debug logging for emoji matching
+              console.log('Comparing emojis:', {
+                reaction: reactionEmoji,
+                faction: faction.emoji,
+                matches: matches
+              });
+              
+              return matches;
+            });
+
+            return matches && !user.bot;
           };
 
           const collector = roleMessage.createReactionCollector({ filter });
@@ -1023,12 +1039,27 @@ module.exports = {
             try {
               const member = await message.guild.members.fetch(user.id);
               
+              // Debug logging
+              console.log('Reaction collected:', {
+                emoji: reaction.emoji.name,
+                emojiId: reaction.emoji.id,
+                userId: user.id,
+                member: member.id
+              });
+              
               // Find the selected faction by matching emoji
-              const selectedFaction = Object.values(SUBFACTION_ROLES).find(f => {
+              const selectedFaction = Object.values(SUBFACTION_ROLES).find(faction => {
                 const reactionEmoji = reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name;
-                const factionEmoji = f.emoji;
-                return reactionEmoji === factionEmoji || 
-                       reactionEmoji === factionEmoji.codePointAt(0).toString();
+                const matches = reactionEmoji === faction.emoji;
+                
+                // Debug logging for faction matching
+                console.log('Matching faction:', {
+                  reaction: reactionEmoji,
+                  faction: faction.emoji,
+                  matches: matches
+                });
+                
+                return matches;
               });
               
               if (!selectedFaction) {
