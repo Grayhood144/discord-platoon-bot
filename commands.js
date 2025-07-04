@@ -990,19 +990,31 @@ module.exports = {
             messageContent += `${faction.emoji} - ${faction.name}\n`;
           }
           
-          messageContent += "\n*Note: You can only be in one subfaction at a time.*";
+          messageContent += "\n*Note: You can only be in one subfaction at a time.*\n" +
+                          "*Your previous subfaction role will be removed when selecting a new one.*";
 
           // Send the message and add reactions
           const roleMessage = await message.channel.send(messageContent);
           
           // Add all reactions
           for (const faction of Object.values(SUBFACTION_ROLES)) {
-            await roleMessage.react(faction.emoji);
+            try {
+              await roleMessage.react(faction.emoji);
+            } catch (error) {
+              console.error(`Failed to add reaction ${faction.emoji}:`, error);
+            }
           }
 
           // Set up reaction collector
           const filter = (reaction, user) => {
-            return Object.values(SUBFACTION_ROLES).some(f => f.emoji === reaction.emoji.name) && !user.bot;
+            // Check if the reaction emoji matches any of our subfaction emojis
+            return Object.values(SUBFACTION_ROLES).some(f => {
+              // Handle both Unicode emoji and custom emoji cases
+              const reactionEmoji = reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name;
+              const factionEmoji = faction.emoji;
+              return reactionEmoji === factionEmoji || 
+                     reactionEmoji === factionEmoji.codePointAt(0).toString();
+            }) && !user.bot;
           };
 
           const collector = roleMessage.createReactionCollector({ filter });
@@ -1010,17 +1022,43 @@ module.exports = {
           collector.on('collect', async (reaction, user) => {
             try {
               const member = await message.guild.members.fetch(user.id);
-              const selectedFaction = Object.values(SUBFACTION_ROLES).find(f => f.emoji === reaction.emoji.name);
               
-              if (!selectedFaction) return;
+              // Find the selected faction by matching emoji
+              const selectedFaction = Object.values(SUBFACTION_ROLES).find(f => {
+                const reactionEmoji = reaction.emoji.id ? reaction.emoji.id : reaction.emoji.name;
+                const factionEmoji = f.emoji;
+                return reactionEmoji === factionEmoji || 
+                       reactionEmoji === factionEmoji.codePointAt(0).toString();
+              });
+              
+              if (!selectedFaction) {
+                console.error('No matching faction found for emoji:', reaction.emoji.name);
+                return;
+              }
 
               // Remove user's reaction
-              await reaction.users.remove(user);
+              try {
+                await reaction.users.remove(user);
+              } catch (error) {
+                console.error('Failed to remove reaction:', error);
+                // Continue anyway as this isn't critical
+              }
+
+              // Check if they already have this role
+              if (member.roles.cache.has(selectedFaction.id)) {
+                const infoMsg = await message.channel.send(
+                  `*Checks clipboard* ${user}, you're already in ${selectedFaction.name}! No changes needed. 🏥`
+                );
+                setTimeout(() => infoMsg.delete().catch(() => {}), 5000);
+                return;
+              }
 
               // Remove all other subfaction roles
+              let removedRoles = [];
               for (const faction of Object.values(SUBFACTION_ROLES)) {
                 if (member.roles.cache.has(faction.id)) {
                   await member.roles.remove(faction.id);
+                  removedRoles.push(faction.name);
                 }
               }
 
@@ -1028,26 +1066,42 @@ module.exports = {
               await member.roles.add(selectedFaction.id);
 
               // Send success message
-              const successMsg = await message.channel.send(
-                `*Adjusts stethoscope* ${user}, you've been assigned to ${selectedFaction.name}! 🎉`
-              );
-              setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+              let successMessage = `*Adjusts stethoscope* ${user}, you've been assigned to ${selectedFaction.name}! 🎉`;
+              if (removedRoles.length > 0) {
+                successMessage += `\n*Note: Removed from ${removedRoles.join(', ')}*`;
+              }
+              
+              const successMsg = await message.channel.send(successMessage);
+              setTimeout(() => successMsg.delete().catch(() => {}), 7000);
 
               // Add to audit log
-              addToAuditLog(`${formatName(user, message.guild)} selected the ${selectedFaction.name} subfaction`);
+              let auditMessage = `${formatName(user, message.guild)} selected the ${selectedFaction.name} subfaction`;
+              if (removedRoles.length > 0) {
+                auditMessage += ` (removed from ${removedRoles.join(', ')})`;
+              }
+              addToAuditLog(auditMessage);
 
             } catch (error) {
               console.error('Role assignment error:', error);
               const errorMsg = await message.channel.send(
-                `*Drops clipboard* Oops! Something went wrong assigning the role for ${user}. Please try again later!`
+                `*Drops clipboard* Oops! Something went wrong assigning the role for ${user}. Please try again later!\n` +
+                `Error: ${error.message}`
               );
               setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
             }
           });
 
+          // Handle collector errors
+          collector.on('error', error => {
+            console.error('Reaction collector error:', error);
+          });
+
         } catch (error) {
           console.error('Role selector creation error:', error);
-          const errorMsg = await message.channel.send("*Fumbles with medical equipment* Oh no! Something went wrong creating the role selector!");
+          const errorMsg = await message.channel.send(
+            "*Fumbles with medical equipment* Oh no! Something went wrong creating the role selector!\n" +
+            `Error: ${error.message}`
+          );
           setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         }
         break;
