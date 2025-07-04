@@ -1023,7 +1023,8 @@ module.exports = {
               emoji: reaction.emoji.name,
               emojiId: reaction.emoji.id,
               userId: user.id,
-              isBot: user.bot
+              isBot: user.bot,
+              availableEmojis: Object.values(SUBFACTION_ROLES).map(f => f.emoji)
             });
 
             // Check if the reaction emoji matches any of our subfaction emojis
@@ -1036,19 +1037,23 @@ module.exports = {
               console.log('Comparing emojis:', {
                 reaction: reactionEmoji,
                 faction: faction.emoji,
-                matches: matches
+                matches: matches,
+                unicodeReaction: reaction.emoji.toString(),
+                unicodeFaction: faction.emoji.toString()
               });
               
               return matches;
             });
 
+            console.log('Final filter result:', matches);
             return matches;
           };
 
-          const collector = roleMessage.createReactionCollector({ filter });
+          const collector = roleMessage.createReactionCollector({ filter, dispose: false });
 
           collector.on('collect', async (reaction, user) => {
             try {
+              console.log('Starting role assignment for user:', user.tag);
               const member = await message.guild.members.fetch(user.id);
               
               // Debug logging
@@ -1056,12 +1061,19 @@ module.exports = {
                 emoji: reaction.emoji.name,
                 emojiId: reaction.emoji.id,
                 userId: user.id,
-                member: member.id
+                member: member.id,
+                memberRoles: Array.from(member.roles.cache.keys())
               });
 
               // Check bot's role position compared to the roles it's trying to manage
               const botRole = message.guild.members.cache.get(client.user.id).roles.highest;
               const targetRoles = Object.values(SUBFACTION_ROLES).map(f => message.guild.roles.cache.get(f.id));
+              
+              console.log('Role hierarchy check:', {
+                botRolePosition: botRole.position,
+                targetRolePositions: targetRoles.map(r => ({ name: r?.name, position: r?.position }))
+              });
+              
               const cannotManage = targetRoles.some(role => role && role.position >= botRole.position);
               
               if (cannotManage) {
@@ -1083,14 +1095,18 @@ module.exports = {
                   reaction: reactionEmoji,
                   faction: faction.emoji,
                   matches: matches,
-                  factionId: faction.id
+                  factionId: faction.id,
+                  factionName: faction.name
                 });
                 
                 return matches;
               });
               
               if (!selectedFaction) {
-                console.error('No matching faction found for emoji:', reaction.emoji.name);
+                console.error('No matching faction found for emoji:', {
+                  reactionEmoji: reaction.emoji.name,
+                  availableFactions: Object.values(SUBFACTION_ROLES).map(f => ({ name: f.name, emoji: f.emoji }))
+                });
                 return;
               }
 
@@ -1104,6 +1120,12 @@ module.exports = {
 
               // Verify the role exists
               const roleToAdd = message.guild.roles.cache.get(selectedFaction.id);
+              console.log('Role verification:', {
+                roleId: selectedFaction.id,
+                roleExists: !!roleToAdd,
+                roleName: roleToAdd?.name
+              });
+              
               if (!roleToAdd) {
                 console.error(`Role ${selectedFaction.id} not found in guild`);
                 const errorMsg = await message.channel.send(
@@ -1114,7 +1136,14 @@ module.exports = {
               }
 
               // Check if they already have this role
-              if (member.roles.cache.has(selectedFaction.id)) {
+              const hasRole = member.roles.cache.has(selectedFaction.id);
+              console.log('Role check:', {
+                userId: user.id,
+                roleId: selectedFaction.id,
+                hasRole: hasRole
+              });
+              
+              if (hasRole) {
                 const infoMsg = await message.channel.send(
                   `*Checks clipboard* ${user}, you're already in ${selectedFaction.name}! No changes needed. 🏥`
                 );
@@ -1127,6 +1156,7 @@ module.exports = {
               for (const faction of Object.values(SUBFACTION_ROLES)) {
                 if (member.roles.cache.has(faction.id)) {
                   try {
+                    console.log(`Removing role ${faction.name} from ${user.tag}`);
                     await member.roles.remove(faction.id);
                     removedRoles.push(faction.name);
                   } catch (error) {
@@ -1137,8 +1167,9 @@ module.exports = {
 
               // Add the selected role
               try {
+                console.log(`Adding role ${selectedFaction.name} to ${user.tag}`);
                 await member.roles.add(selectedFaction.id);
-                console.log(`Added role ${selectedFaction.name} to ${member.user.username}`);
+                console.log(`Successfully added role ${selectedFaction.name} to ${user.tag}`);
               } catch (error) {
                 console.error(`Failed to add role ${selectedFaction.name}:`, error);
                 const errorMsg = await message.channel.send(
@@ -1149,10 +1180,17 @@ module.exports = {
               }
 
               // Add the organization role if they don't have it
-              if (!member.roles.cache.has(ORGANIZATION_ROLE)) {
+              const hasOrgRole = member.roles.cache.has(ORGANIZATION_ROLE);
+              console.log('Organization role check:', {
+                userId: user.id,
+                hasOrgRole: hasOrgRole
+              });
+              
+              if (!hasOrgRole) {
                 try {
+                  console.log(`Adding organization role to ${user.tag}`);
                   await member.roles.add(ORGANIZATION_ROLE);
-                  console.log(`Added organization role to ${member.user.username}`);
+                  console.log(`Successfully added organization role to ${user.tag}`);
                 } catch (error) {
                   console.error('Failed to add organization role:', error);
                 }
