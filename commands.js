@@ -44,6 +44,7 @@ const ADD_ROLES = {
 };
 
 const JUNIOR_OFFICER_ROLE = '1295544720222589069'; // Junior Lieutenant role ID
+const ORGANIZATION_ROLE = '1295545358767755336'; // Organization role ID
 
 // Funny delete messages with casual Reynolds-style humor
 const DELETE_MESSAGES = [
@@ -1095,6 +1096,12 @@ module.exports = {
 
               // Add the selected role
               await member.roles.add(selectedFaction.id);
+
+              // Add the organization role if they don't have it
+              if (!member.roles.cache.has(ORGANIZATION_ROLE)) {
+                await member.roles.add(ORGANIZATION_ROLE);
+                console.log(`Added organization role to ${member.user.username}`);
+              }
 
               // Send success message
               let successMessage = `*Adjusts stethoscope* ${user}, you've been assigned to ${selectedFaction.name}! 🎉`;
