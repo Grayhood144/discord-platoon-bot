@@ -26,8 +26,11 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel, Partials.GuildMember]
 });
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+  
+  // Set up reaction collectors
+  await commandModule.setupStoredReactionCollectors(client);
   
   // Set up daily role check at 9:00 AM UTC
   const now = new Date();

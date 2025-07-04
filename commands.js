@@ -622,774 +622,773 @@ async function updateDeployMessage(client, fallbackChannel = null) {
   }
 }
 
-module.exports = {
-  commands: async (message, client) => {
-    if (
-      !message.content.startsWith('$') &&
-      !message.content.startsWith('$$') &&
-      !message.content.startsWith('SauceTest') &&
-      !message.content.startsWith('deploy')
-    ) return;
+const commands = async (message, client) => {
+  if (
+    !message.content.startsWith('$') &&
+    !message.content.startsWith('$$') &&
+    !message.content.startsWith('SauceTest') &&
+    !message.content.startsWith('deploy')
+  ) return;
 
-    const args = message.content.trim().split(/ +/);
-    const cmd = args.shift();
+  const args = message.content.trim().split(/ +/);
+  const cmd = args.shift();
 
-    const author = message.member;
-    const authorID = message.author.id;
+  const author = message.member;
+  const authorID = message.author.id;
 
-    const ADMIN_IDS = getRoleIDs().admin;
-    const SYNC_ACCESS = getRoleIDs().sync;
+  const ADMIN_IDS = getRoleIDs().admin;
+  const SYNC_ACCESS = getRoleIDs().sync;
 
-    // Get platoon leader roles from JSON structure
-    const roleIDs = getRoleIDs();
-    const PLATOON_LEADER_ROLES = {};
-    if (subsections.roleIDs?.server1?.platoons) {
-      for (const [platoonName, roleID] of Object.entries(subsections.roleIDs.server1.platoons)) {
-        PLATOON_LEADER_ROLES[platoonName] = roleID;
-      }
+  // Get platoon leader roles from JSON structure
+  const roleIDs = getRoleIDs();
+  const PLATOON_LEADER_ROLES = {};
+  if (subsections.roleIDs?.server1?.platoons) {
+    for (const [platoonName, roleID] of Object.entries(subsections.roleIDs.server1.platoons)) {
+      PLATOON_LEADER_ROLES[platoonName] = roleID;
+    }
+  }
+
+  // New role IDs for Platoon positions
+  const PLATOON_LEADER_ROLE = getRoleIDs().platoonLeader;
+  const PLATOON_INSTRUCTOR_ROLE = getRoleIDs().platoonInstructor;
+
+  const isAdmin = hasRole(author, ADMIN_IDS) || authorID === '603550636545540096';
+
+  switch (cmd) {
+    case '$help': {
+      const helpText = `**Subsection Bot Command List**\n\n` +
+        `**General Commands**\n` +
+        `• \`deploy\` — Shows the full subsection layout.\n` +
+        `• \`$sync\` — Updates all members in each subsection based on Discord roles.\n` +
+        `• \`$help\` — Displays this help message.\n\n` +
+        
+        `**Veterancy Commands**\n` +
+        `• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n` +
+        `• \`$veterancy all\` — Check and assign veterancy roles for all members\n` +
+        `• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n` +
+        
+        `**Message Management**\n` +
+        `• \`$delete 5/10/50\` — Delete messages (Lieutenant+ only)\n\n` +
+        
+        `**Automatic Features**\n` +
+        `• New members automatically receive TRA, Cadet, and Trainee roles\n` +
+        `• Daily role check at 9:00 AM UTC ensures all members have required roles\n\n` +
+        
+        `**Admin Commands** (Restricted to @S or Admins)\n` +
+        `• \`$$deploy true/false\` — Enable or disable testing mode.\n` +
+        `• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n` +
+        `• \`$auditlog\` — View audit log.\n` +
+        `• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n` +
+        `• \`$clearcommands\` — Deletes all command messages.\n` +
+        `• \`$debugroles\` — List all roles in the server.\n` +
+        `• \`$eval @user rank\` — Promote a member to a specific rank.\n` +
+        `• \`$reaction\` — Create an organization role selector (Dr. Sauce only).\n` +
+        `• \`$fixed\` — Remove Cadet/TRA/Trainee roles from members (Dr. Sauce only).`;
+      
+      const sentMsg = await message.channel.send(helpText);
+      setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
+      break;
     }
 
-    // New role IDs for Platoon positions
-    const PLATOON_LEADER_ROLE = getRoleIDs().platoonLeader;
-    const PLATOON_INSTRUCTOR_ROLE = getRoleIDs().platoonInstructor;
-
-    const isAdmin = hasRole(author, ADMIN_IDS) || authorID === '603550636545540096';
-
-    switch (cmd) {
-      case '$help': {
-        const helpText = `**Subsection Bot Command List**\n\n` +
-          `**General Commands**\n` +
-          `• \`deploy\` — Shows the full subsection layout.\n` +
-          `• \`$sync\` — Updates all members in each subsection based on Discord roles.\n` +
-          `• \`$help\` — Displays this help message.\n\n` +
-          
-          `**Veterancy Commands**\n` +
-          `• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n` +
-          `• \`$veterancy all\` — Check and assign veterancy roles for all members\n` +
-          `• \`$veterancy check @user\` — Check veterancy status without assigning roles\n\n` +
-          
-          `**Message Management**\n` +
-          `• \`$delete 5/10/50\` — Delete messages (Lieutenant+ only)\n\n` +
-          
-          `**Automatic Features**\n` +
-          `• New members automatically receive TRA, Cadet, and Trainee roles\n` +
-          `• Daily role check at 9:00 AM UTC ensures all members have required roles\n\n` +
-          
-          `**Admin Commands** (Restricted to @S or Admins)\n` +
-          `• \`$$deploy true/false\` — Enable or disable testing mode.\n` +
-          `• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n` +
-          `• \`$auditlog\` — View audit log.\n` +
-          `• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n` +
-          `• \`$clearcommands\` — Deletes all command messages.\n` +
-          `• \`$debugroles\` — List all roles in the server.\n` +
-          `• \`$eval @user rank\` — Promote a member to a specific rank.\n` +
-          `• \`$reaction\` — Create an organization role selector (Dr. Sauce only).\n` +
-          `• \`$fixed\` — Remove Cadet/TRA/Trainee roles from members (Dr. Sauce only).`;
-        
-        const sentMsg = await message.channel.send(helpText);
-        setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
+    case '$sync': {
+      if (!hasRole(author, SYNC_ACCESS) && authorID !== '603550636545540096') {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         break;
       }
 
-      case '$sync': {
-        if (!hasRole(author, SYNC_ACCESS) && authorID !== '603550636545540096') {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
+      try {
+      await message.guild.members.fetch(); // fetch full member list
+      const allMembers = message.guild.members.cache;
+        
+        let syncReport = [];
+        let totalMembersFound = 0;
 
-        try {
-        await message.guild.members.fetch(); // fetch full member list
-        const allMembers = message.guild.members.cache;
+      for (const [subName, sub] of Object.entries(subsections)) {
+        if (subName === '_intro') continue;
+
+        const roleID = sub.roleID;
+
+        const members = [];
+        const officers = [];
+        const instructors = [];
+
+          // Check if roles exist in the server
+          const subsectionRole = message.guild.roles.cache.get(roleID);
+          const platoonLeaderRole = message.guild.roles.cache.get(PLATOON_LEADER_ROLE);
+          const platoonInstructorRole = message.guild.roles.cache.get(PLATOON_INSTRUCTOR_ROLE);
           
-          let syncReport = [];
-          let totalMembersFound = 0;
-
-        for (const [subName, sub] of Object.entries(subsections)) {
-          if (subName === '_intro') continue;
-
-          const roleID = sub.roleID;
-
-          const members = [];
-          const officers = [];
-          const instructors = [];
-
-            // Check if roles exist in the server
-            const subsectionRole = message.guild.roles.cache.get(roleID);
-            const platoonLeaderRole = message.guild.roles.cache.get(PLATOON_LEADER_ROLE);
-            const platoonInstructorRole = message.guild.roles.cache.get(PLATOON_INSTRUCTOR_ROLE);
-            
-            if (!subsectionRole) {
-              syncReport.push(`⚠️ Role not found for ${subName}: ${roleID}`);
-              continue;
-            }
-
-          allMembers.forEach(member => {
-              const hasSubsectionRole = member.roles.cache.has(roleID);
-              const hasPlatoonLeaderRole = member.roles.cache.has(PLATOON_LEADER_ROLE);
-              const hasPlatoonInstructorRole = member.roles.cache.has(PLATOON_INSTRUCTOR_ROLE);
-
-              if (hasSubsectionRole) {
-              userRoles[member.id] = subName;
-                totalMembersFound++;
-
-                // Check if they have platoon leadership roles
-                if (hasPlatoonLeaderRole) {
-                officers.push(member.id);
-                } else if (hasPlatoonInstructorRole) {
-                instructors.push(member.id);
-                } else {
-                  // Only add to members if they don't have leadership roles
-                  members.push(member.id);
-              }
-            }
-          });
-
-          sub.members = members;
-          sub.officer = officers;
-          sub.instructors = instructors;
-
-            syncReport.push(`📊 ${subName}: ${officers.length} officers, ${instructors.length} instructors, ${members.length} members`);
-        }
-
-        saveJSON('./subsections.json', subsections);
-        saveJSON('./userRoles.json', userRoles);
-
-          addToAuditLog(`${formatName(message.author, message.guild)} synced all subsections`);
-
-          // Create buttons for vet role sync option
-          const row = new ActionRowBuilder()
-            .addComponents(
-              new ButtonBuilder()
-                .setCustomId('sync_vet_yes')
-                .setLabel('Yes, sync vet roles')
-                .setStyle(ButtonStyle.Primary),
-              new ButtonBuilder()
-                .setCustomId('sync_vet_no')
-                .setLabel('No, skip vet roles')
-                .setStyle(ButtonStyle.Secondary)
-            );
-
-          const syncMsg = await message.channel.send({
-            content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\nWould you like to sync veteran roles as well?`,
-            components: [row]
-          });
-
-          // Create a button collector
-          const collector = syncMsg.createMessageComponentCollector({ time: 60000 });
-
-          collector.on('collect', async i => {
-            if (i.user.id !== message.author.id) {
-              await i.reply({ content: 'Only the person who initiated the sync can use these buttons.', ephemeral: true });
-              return;
-            }
-
-            if (i.customId === 'sync_vet_yes') {
-              await i.update({ content: '🔄 Starting veteran role sync...', components: [] });
-              
-              let processedCount = 0;
-              const totalMembers = allMembers.size;
-              
-              for (const member of allMembers.values()) {
-                processedCount++;
-                
-                // Update progress message less frequently
-                if (processedCount === 1 || processedCount === totalMembers || processedCount % 20 === 0) {
-                  await syncMsg.edit({
-                    content: `🔄 Syncing veteran roles... (${processedCount}/${totalMembers})`
-                  });
-                }
-
-                await checkAndAssignVeterancy(member, message.guild);
-              }
-
-              await syncMsg.edit({ 
-                content: `✅ Veteran role sync complete! Processed ${totalMembers} members.`
-              });
-
-              addToAuditLog(`${formatName(message.author, message.guild)} synced veteran roles`);
-            } else if (i.customId === 'sync_vet_no') {
-              await i.update({
-                content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\n*Skipped veteran role sync.*`,
-                components: []
-              });
-            }
-          });
-
-          collector.on('end', async (collected, reason) => {
-            if (reason === 'time') {
-              await syncMsg.edit({
-                content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\n*Veteran role sync option expired.*`,
-                components: []
-              });
-            }
-          });
-
-          // Update deploy message
-          await updateDeployMessage(client, message.channel);
-
-          // Auto-update deploy message after sync
-          try {
-            await updateDeployMessage(client);
-          } catch (error) {
-            console.error('Auto-deploy update error:', error);
+          if (!subsectionRole) {
+            syncReport.push(`⚠️ Role not found for ${subName}: ${roleID}`);
+            continue;
           }
-        } catch (error) {
-          console.error('Sync error:', error);
-          const errorMsg = await message.channel.send(`❌ Error syncing subsections: ${error.message}`);
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        }
-        break;
+
+        allMembers.forEach(member => {
+            const hasSubsectionRole = member.roles.cache.has(roleID);
+            const hasPlatoonLeaderRole = member.roles.cache.has(PLATOON_LEADER_ROLE);
+            const hasPlatoonInstructorRole = member.roles.cache.has(PLATOON_INSTRUCTOR_ROLE);
+
+            if (hasSubsectionRole) {
+            userRoles[member.id] = subName;
+              totalMembersFound++;
+
+              // Check if they have platoon leadership roles
+              if (hasPlatoonLeaderRole) {
+              officers.push(member.id);
+              } else if (hasPlatoonInstructorRole) {
+              instructors.push(member.id);
+              } else {
+                // Only add to members if they don't have leadership roles
+                members.push(member.id);
+            }
+          }
+        });
+
+        sub.members = members;
+        sub.officer = officers;
+        sub.instructors = instructors;
+
+          syncReport.push(`📊 ${subName}: ${officers.length} officers, ${instructors.length} instructors, ${members.length} members`);
       }
 
-      case 'deploy': {
-        try {
-          await updateDeployMessage(client, message.channel);
-          const successMsg = await message.channel.send('✅ Deploy message updated successfully.');
-          setTimeout(() => successMsg.delete().catch(() => {}), 5000);
-        } catch (error) {
-          console.error('Deploy error:', error);
-          const errorMsg = await message.channel.send(`❌ Error updating deploy message: ${error.message}`);
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        }
-        break;
-      }
+      saveJSON('./subsections.json', subsections);
+      saveJSON('./userRoles.json', userRoles);
 
-      case '$clear': {
-        if (!isAdmin) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
+        addToAuditLog(`${formatName(message.author, message.guild)} synced all subsections`);
 
-        const [section, target] = args;
-        
-        if (!subsections[section]) {
-          const errorMsg = await message.channel.send('❌ Subsection not found.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
-
-        if (target === 'all') {
-          subsections[section].officer = [];
-          subsections[section].instructors = [];
-          subsections[section].members = [];
-          addToAuditLog(`${formatName(message.author, message.guild)} cleared all personnel from ${section}`);
-        } else if (['officers', 'instructors', 'members'].includes(target)) {
-          const key = target === 'officers' ? 'officer' : target;
-          subsections[section][key] = [];
-          addToAuditLog(`${formatName(message.author, message.guild)} cleared ${target} from ${section}`);
-        } else {
-          const errorMsg = await message.channel.send('❌ Invalid target. Use: officers, instructors, members, or all');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        break;
-      }
-
-        saveJSON('./subsections.json', subsections);
-        const successMsg = await message.channel.send(`✅ Cleared ${target} in ${section}.`);
-        setTimeout(() => successMsg.delete().catch(() => {}), 10000);
-        break;
-      }
-
-      case '$auditlog': {
-        if (!isAdmin) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
-
-        const recentLogs = auditLog.slice(-10);
-        const logText = recentLogs.length > 0 
-          ? `**Audit Log (Last 10):**\n${recentLogs.join('\n')}`
-          : '**Audit Log:** No recent activity.';
-        
-        const logMsg = await message.channel.send(logText);
-        setTimeout(() => logMsg.delete().catch(() => {}), 10000);
-        break;
-      }
-
-      case '$clearall': {
-        if (!isAdmin && !message.content.includes('2430114')) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
-
-        try {
-        const msgs = await message.channel.messages.fetch({ limit: 100 });
-          const toDelete = msgs.filter(msg => 
-            msg.author.id === client.user.id ||
-            msg.content.includes('2430114') ||
-            msg.content.startsWith('$') ||
-            msg.content.startsWith('$$') ||
-            msg.content.startsWith('SauceTest') ||
-            msg.content.startsWith('deploy')
+        // Create buttons for vet role sync option
+        const row = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('sync_vet_yes')
+              .setLabel('Yes, sync vet roles')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('sync_vet_no')
+              .setLabel('No, skip vet roles')
+              .setStyle(ButtonStyle.Secondary)
           );
 
-          if (toDelete.size > 0) {
-            await message.channel.bulkDelete(toDelete);
-            addToAuditLog(`${formatName(message.author, message.guild)} cleared ${toDelete.size} messages`);
+        const syncMsg = await message.channel.send({
+          content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\nWould you like to sync veteran roles as well?`,
+          components: [row]
+        });
+
+        // Create a button collector
+        const collector = syncMsg.createMessageComponentCollector({ time: 60000 });
+
+        collector.on('collect', async i => {
+          if (i.user.id !== message.author.id) {
+            await i.reply({ content: 'Only the person who initiated the sync can use these buttons.', ephemeral: true });
+            return;
           }
-        } catch (error) {
-          console.error('Clearall error:', error);
-          const errorMsg = await message.channel.send('❌ Error clearing messages.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        }
-        break;
-      }
 
-      case '$clearcommands': {
-        if (!isAdmin) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
-
-        try {
-        const msgs = await message.channel.messages.fetch({ limit: 100 });
-          const toDelete = msgs.filter(msg => 
-            msg.content.startsWith('$') || 
-            msg.content.startsWith('$$') ||
-            msg.content.startsWith('SauceTest') ||
-            msg.content.startsWith('deploy')
-          );
-
-          if (toDelete.size > 0) {
-            await message.channel.bulkDelete(toDelete);
-            addToAuditLog(`${formatName(message.author, message.guild)} cleared ${toDelete.size} command messages`);
-          }
-        } catch (error) {
-          console.error('Clearcommands error:', error);
-          const errorMsg = await message.channel.send('❌ Error clearing command messages.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          }
-        break;
-      }
-
-      case '$$deploy': {
-        if (!isAdmin) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
-
-        testingMode = args[0] === 'true';
-        const statusMsg = await message.channel.send(`🧪 Testing mode is now ${testingMode ? 'enabled' : 'disabled'}.`);
-        setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
-        addToAuditLog(`${formatName(message.author, message.guild)} ${testingMode ? 'enabled' : 'disabled'} testing mode`);
-        break;
-      }
-
-      case 'SauceTest14405': {
-        if (!isAdmin) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
-
-        testingMode = true;
-        const statusMsg = await message.channel.send('🧪 Testing mode activated.');
-        setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
-        addToAuditLog(`${formatName(message.author, message.guild)} activated testing mode`);
-        break;
-      }
-
-      case 'SauceTestend14405': {
-        if (!isAdmin) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          break;
-        }
-
-        testingMode = false;
-        const statusMsg = await message.channel.send('🧪 Testing mode ended.');
-        setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
-        addToAuditLog(`${formatName(message.author, message.guild)} ended testing mode`);
-        break;
-      }
-
-      case '$veterancy': {
-        if (!hasRole(author, SYNC_ACCESS) && authorID !== '603550636545540096') {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
-
-        const target = args[0];
-        const isCheckOnly = args[1] === 'check';
-
-        if (!target) {
-          const errorMsg = await message.channel.send('❌ Please specify a user (@user) or "all" to check all members.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
-
-        try {
-          if (target === 'all') {
-            // Check veterancy for all members
-            await message.guild.members.fetch();
-            const allMembers = message.guild.members.cache;
-            
-            const statusMsg = await message.channel.send('🔄 Checking veterancy for all members... This may take a moment.');
+          if (i.customId === 'sync_vet_yes') {
+            await i.update({ content: '🔄 Starting veteran role sync...', components: [] });
             
             let processedCount = 0;
-            let assignedCount = 0;
-            const results = [];
-
-            for (const [memberId, member] of allMembers) {
-              if (member.user.bot) continue; // Skip bots
+            const totalMembers = allMembers.size;
+            
+            for (const member of allMembers.values()) {
+              processedCount++;
               
-              const result = await checkAndAssignVeterancy(member, message.guild);
-              if (result) {
-                processedCount++;
-                if (result.roleAssigned) assignedCount++;
-                
-                if (isCheckOnly) {
-                  results.push(`${result.member}: ${result.monthsInServer} months (${result.veterancyLevel})`);
-                } else {
-                  results.push(`${result.member}: ${result.monthsInServer} months → ${result.veterancyLevel}`);
-                }
+              // Update progress message less frequently
+              if (processedCount === 1 || processedCount === totalMembers || processedCount % 20 === 0) {
+                await syncMsg.edit({
+                  content: `🔄 Syncing veteran roles... (${processedCount}/${totalMembers})`
+                });
+              }
+
+              await checkAndAssignVeterancy(member, message.guild);
+            }
+
+            await syncMsg.edit({ 
+              content: `✅ Veteran role sync complete! Processed ${totalMembers} members.`
+            });
+
+            addToAuditLog(`${formatName(message.author, message.guild)} synced veteran roles`);
+          } else if (i.customId === 'sync_vet_no') {
+            await i.update({
+              content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\n*Skipped veteran role sync.*`,
+              components: []
+            });
+          }
+        });
+
+        collector.on('end', async (collected, reason) => {
+          if (reason === 'time') {
+            await syncMsg.edit({
+              content: `✅ Sync complete! Found ${totalMembersFound} total members.\n\n${syncReport.join('\n')}\n\n*Veteran role sync option expired.*`,
+              components: []
+            });
+          }
+        });
+
+        // Update deploy message
+        await updateDeployMessage(client, message.channel);
+
+        // Auto-update deploy message after sync
+        try {
+          await updateDeployMessage(client);
+        } catch (error) {
+          console.error('Auto-deploy update error:', error);
+        }
+      } catch (error) {
+        console.error('Sync error:', error);
+        const errorMsg = await message.channel.send(`❌ Error syncing subsections: ${error.message}`);
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      }
+      break;
+    }
+
+    case 'deploy': {
+      try {
+        await updateDeployMessage(client, message.channel);
+        const successMsg = await message.channel.send('✅ Deploy message updated successfully.');
+        setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+      } catch (error) {
+        console.error('Deploy error:', error);
+        const errorMsg = await message.channel.send(`❌ Error updating deploy message: ${error.message}`);
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      }
+      break;
+    }
+
+    case '$clear': {
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      const [section, target] = args;
+      
+      if (!subsections[section]) {
+        const errorMsg = await message.channel.send('❌ Subsection not found.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      if (target === 'all') {
+        subsections[section].officer = [];
+        subsections[section].instructors = [];
+        subsections[section].members = [];
+        addToAuditLog(`${formatName(message.author, message.guild)} cleared all personnel from ${section}`);
+      } else if (['officers', 'instructors', 'members'].includes(target)) {
+        const key = target === 'officers' ? 'officer' : target;
+        subsections[section][key] = [];
+        addToAuditLog(`${formatName(message.author, message.guild)} cleared ${target} from ${section}`);
+      } else {
+        const errorMsg = await message.channel.send('❌ Invalid target. Use: officers, instructors, members, or all');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      break;
+    }
+
+      saveJSON('./subsections.json', subsections);
+      const successMsg = await message.channel.send(`✅ Cleared ${target} in ${section}.`);
+      setTimeout(() => successMsg.delete().catch(() => {}), 10000);
+      break;
+    }
+
+    case '$auditlog': {
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      const recentLogs = auditLog.slice(-10);
+      const logText = recentLogs.length > 0 
+        ? `**Audit Log (Last 10):**\n${recentLogs.join('\n')}`
+        : '**Audit Log:** No recent activity.';
+      
+      const logMsg = await message.channel.send(logText);
+      setTimeout(() => logMsg.delete().catch(() => {}), 10000);
+      break;
+    }
+
+    case '$clearall': {
+      if (!isAdmin && !message.content.includes('2430114')) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      try {
+      const msgs = await message.channel.messages.fetch({ limit: 100 });
+        const toDelete = msgs.filter(msg => 
+          msg.author.id === client.user.id ||
+          msg.content.includes('2430114') ||
+          msg.content.startsWith('$') ||
+          msg.content.startsWith('$$') ||
+          msg.content.startsWith('SauceTest') ||
+          msg.content.startsWith('deploy')
+        );
+
+        if (toDelete.size > 0) {
+          await message.channel.bulkDelete(toDelete);
+          addToAuditLog(`${formatName(message.author, message.guild)} cleared ${toDelete.size} messages`);
+        }
+      } catch (error) {
+        console.error('Clearall error:', error);
+        const errorMsg = await message.channel.send('❌ Error clearing messages.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      }
+      break;
+    }
+
+    case '$clearcommands': {
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      try {
+      const msgs = await message.channel.messages.fetch({ limit: 100 });
+        const toDelete = msgs.filter(msg => 
+          msg.content.startsWith('$') || 
+          msg.content.startsWith('$$') ||
+          msg.content.startsWith('SauceTest') ||
+          msg.content.startsWith('deploy')
+        );
+
+        if (toDelete.size > 0) {
+          await message.channel.bulkDelete(toDelete);
+          addToAuditLog(`${formatName(message.author, message.guild)} cleared ${toDelete.size} command messages`);
+        }
+      } catch (error) {
+        console.error('Clearcommands error:', error);
+        const errorMsg = await message.channel.send('❌ Error clearing command messages.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        }
+      break;
+    }
+
+    case '$$deploy': {
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      testingMode = args[0] === 'true';
+      const statusMsg = await message.channel.send(`🧪 Testing mode is now ${testingMode ? 'enabled' : 'disabled'}.`);
+      setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
+      addToAuditLog(`${formatName(message.author, message.guild)} ${testingMode ? 'enabled' : 'disabled'} testing mode`);
+      break;
+    }
+
+    case 'SauceTest14405': {
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      testingMode = true;
+      const statusMsg = await message.channel.send('🧪 Testing mode activated.');
+      setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
+      addToAuditLog(`${formatName(message.author, message.guild)} activated testing mode`);
+      break;
+    }
+
+    case 'SauceTestend14405': {
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        break;
+      }
+
+      testingMode = false;
+      const statusMsg = await message.channel.send('🧪 Testing mode ended.');
+      setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
+      addToAuditLog(`${formatName(message.author, message.guild)} ended testing mode`);
+      break;
+    }
+
+    case '$veterancy': {
+      if (!hasRole(author, SYNC_ACCESS) && authorID !== '603550636545540096') {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      const target = args[0];
+      const isCheckOnly = args[1] === 'check';
+
+      if (!target) {
+        const errorMsg = await message.channel.send('❌ Please specify a user (@user) or "all" to check all members.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      try {
+        if (target === 'all') {
+          // Check veterancy for all members
+          await message.guild.members.fetch();
+          const allMembers = message.guild.members.cache;
+          
+          const statusMsg = await message.channel.send('🔄 Checking veterancy for all members... This may take a moment.');
+          
+          let processedCount = 0;
+          let assignedCount = 0;
+          const results = [];
+
+          for (const [memberId, member] of allMembers) {
+            if (member.user.bot) continue; // Skip bots
+            
+            const result = await checkAndAssignVeterancy(member, message.guild);
+            if (result) {
+              processedCount++;
+              if (result.roleAssigned) assignedCount++;
+              
+              if (isCheckOnly) {
+                results.push(`${result.member}: ${result.monthsInServer} months (${result.veterancyLevel})`);
+              } else {
+                results.push(`${result.member}: ${result.monthsInServer} months → ${result.veterancyLevel}`);
               }
             }
-
-            const reportText = isCheckOnly 
-              ? `📊 **Veterancy Check Results**\n\n${results.slice(0, 20).join('\n')}${results.length > 20 ? `\n\n... and ${results.length - 20} more members` : ''}\n\n**Total checked:** ${processedCount}`
-              : `✅ **Veterancy Assignment Complete**\n\n${results.slice(0, 20).join('\n')}${results.length > 20 ? `\n\n... and ${results.length - 20} more members` : ''}\n\n**Total processed:** ${processedCount}\n**Roles assigned:** ${assignedCount}`;
-
-            await statusMsg.edit(reportText);
-            setTimeout(() => statusMsg.delete().catch(() => {}), 30000);
-
-            addToAuditLog(`${formatName(message.author, message.guild)} ${isCheckOnly ? 'checked' : 'assigned'} veterancy for all members`);
-
-          } else {
-            // Check veterancy for specific user
-            const userId = target.replace(/[<@!>]/g, '');
-            const member = message.guild.members.cache.get(userId);
-            
-            if (!member) {
-              const errorMsg = await message.channel.send('❌ User not found in this server.');
-              setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-              break;
-            }
-
-            const result = await checkAndAssignVeterancy(member, message.guild);
-            
-            if (result) {
-              const actionText = isCheckOnly ? 'checked' : 'assigned';
-              const roleText = isCheckOnly ? '' : (result.roleAssigned ? `\n✅ **Role assigned:** ${result.veterancyLevel}` : '\n❌ **No role assigned** (under 1 month)');
-              
-              const resultText = `📊 **Veterancy ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}**\n\n**Member:** ${result.member}\n**Join Date:** ${result.joinDate}\n**Time in Server:** ${result.monthsInServer} months (${result.daysInServer} days)\n**Veterancy Level:** ${result.veterancyLevel}${roleText}`;
-              
-              const successMsg = await message.channel.send(resultText);
-              setTimeout(() => successMsg.delete().catch(() => {}), 15000);
-
-              addToAuditLog(`${formatName(message.author, message.guild)} ${actionText} veterancy for ${result.member}`);
-            } else {
-              const errorMsg = await message.channel.send('❌ Could not determine veterancy for this user.');
-              setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-            }
-          }
-        } catch (error) {
-          console.error('Veterancy error:', error);
-          const errorMsg = await message.channel.send(`❌ Error processing veterancy: ${error.message}`);
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        }
-        break;
-      }
-
-      case '$debugroles': {
-        if (!isAdmin) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
-
-        try {
-          const roles = message.guild.roles.cache;
-          let roleList = '**Bot Version Info:**\n';
-          roleList += `Version: ${BOT_VERSION.version}\n`;
-          roleList += `Last Updated: ${BOT_VERSION.lastUpdated}\n\n`;
-          
-          roleList += '**Recent Changes:**\n';
-          BOT_VERSION.recentChanges.forEach(change => {
-            roleList += `• ${change}\n`;
-          });
-          
-          roleList += '\n**Organization Roles Status:**\n';
-          for (const [roleName, roleId] of Object.entries(IMPORTANT_ROLES)) {
-            const role = roles.get(roleId);
-            if (role) {
-              roleList += `✅ ${roleName}: ${role.name} (${role.id})\n`;
-            } else {
-              roleList += `❌ ${roleName}: Role not found (${roleId})\n`;
-            }
           }
 
-          await message.channel.send(roleList);
-        } catch (error) {
-          console.error('Debug roles error:', error);
-          const errorMsg = await message.channel.send(`❌ Error listing roles: ${error.message}`);
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        }
-        break;
-      }
+          const reportText = isCheckOnly 
+            ? `📊 **Veterancy Check Results**\n\n${results.slice(0, 20).join('\n')}${results.length > 20 ? `\n\n... and ${results.length - 20} more members` : ''}\n\n**Total checked:** ${processedCount}`
+            : `✅ **Veterancy Assignment Complete**\n\n${results.slice(0, 20).join('\n')}${results.length > 20 ? `\n\n... and ${results.length - 20} more members` : ''}\n\n**Total processed:** ${processedCount}\n**Roles assigned:** ${assignedCount}`;
 
-      case '$eval': {
-        // Check if the user is a warrant officer or - - - - OFC - - - -
-        if (!hasRole(author, [WARRANT_OFFICER_ROLE, OFFICER_ROLE])) {
-          const errorMsg = await message.channel.send('❌ You do not have permission to use this command. Only Warrant Officers and - - - - OFC - - - - can use this command.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
+          await statusMsg.edit(reportText);
+          setTimeout(() => statusMsg.delete().catch(() => {}), 30000);
 
-        // Check command format
-        if (args.length !== 2) {
-          const errorMsg = await message.channel.send('❌ Invalid command format. Use: `$eval @user rank` where rank is private, pfc, or lance');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
+          addToAuditLog(`${formatName(message.author, message.guild)} ${isCheckOnly ? 'checked' : 'assigned'} veterancy for all members`);
 
-        // Parse arguments
-        const userMention = args[0];
-        const rank = args[1].toLowerCase();
-        
-        // Validate rank
-        if (!['private', 'pfc', 'lance'].includes(rank)) {
-          const errorMsg = await message.channel.send('❌ Invalid rank. Must be one of: private, pfc, lance');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
-
-        try {
-          // Get the target user
-          const userID = userMention.replace(/[<@!>]/g, '');
-          const targetMember = await message.guild.members.fetch(userID);
-
-          // Check if user has Cadet role
-          if (!hasRole(targetMember, [REMOVE_ROLES.cadet])) {
-            const errorMsg = await message.channel.send('❌ This command can only be used on members with the Cadet role.');
+        } else {
+          // Check veterancy for specific user
+          const userId = target.replace(/[<@!>]/g, '');
+          const member = message.guild.members.cache.get(userId);
+          
+          if (!member) {
+            const errorMsg = await message.channel.send('❌ User not found in this server.');
             setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
             break;
           }
 
-          // Remove old roles
-          for (const roleID of Object.values(REMOVE_ROLES)) {
-            if (targetMember.roles.cache.has(roleID)) {
-              await targetMember.roles.remove(roleID);
-            }
-          }
-
-          // Add new rank role
-          await targetMember.roles.add(RANK_ROLES[rank]);
-
-          // Add additional roles
-          for (const roleID of Object.values(ADD_ROLES)) {
-            await targetMember.roles.add(roleID);
-          }
-
-          // Log the promotion
-          const successMsg = await message.channel.send(`✅ Successfully promoted ${targetMember.user.tag} to ${rank.toUpperCase()}`);
-          setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+          const result = await checkAndAssignVeterancy(member, message.guild);
           
-          // Add to audit log
-          addToAuditLog(`${formatName(message.author, message.guild)} promoted ${formatName(targetMember.user, message.guild)} to ${rank.toUpperCase()}`);
-        } catch (error) {
-          console.error('Eval command error:', error);
-          const errorMsg = await message.channel.send(`❌ Error executing command: ${error.message}`);
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-        }
-        break;
-      }
-
-      case '$reaction': {
-        // Check if user is Sauce
-        if (authorID !== '603550636545540096') {
-          const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can deploy the role selector!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
-
-        try {
-          // Check bot permissions
-          const botMember = message.guild.members.cache.get(client.user.id);
-          if (!botMember.permissions.has('ManageRoles')) {
-            const errorMsg = await message.channel.send("*Panics* I don't have permission to manage roles! Please give me the 'Manage Roles' permission!");
-            setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-            return;
-          }
-
-          // Create the subfaction selection message
-          let messageContent = "**🏥 Welcome to Dr. Sauce's Subfaction Selector! 🏥**\n\n" +
-                             "React with the appropriate emoji to select your subfaction:\n\n";
-          
-          // Add subfaction descriptions
-          for (const faction of Object.values(SUBFACTION_ROLES)) {
-            messageContent += `${faction.emoji} - ${faction.name}\n`;
-          }
-          
-          messageContent += "\n*Note: You can only be in one subfaction at a time.*\n" +
-                          "*Your previous subfaction role will be removed when selecting a new one.*";
-
-          // Send the message and add reactions
-          const roleMessage = await message.channel.send(messageContent);
-          
-          // Add all reactions
-          for (const faction of Object.values(SUBFACTION_ROLES)) {
-            try {
-              await roleMessage.react(faction.emoji);
-            } catch (error) {
-              console.error(`Failed to add reaction ${faction.emoji}:`, error);
-            }
-          }
-
-          // Store the message ID and channel ID
-          reactionMessages.push({
-            messageId: roleMessage.id,
-            channelId: roleMessage.channel.id
-          });
-          saveReactionMessages();
-
-          // Set up the collector
-          setupReactionCollector(roleMessage);
-
-        } catch (error) {
-          console.error('Error in reaction command:', error);
-          await message.channel.send('*Drops all the medical equipment* Oops! Something went wrong setting up the reaction roles!');
-        }
-        break;
-      }
-
-      // HIDDEN: $nick command for owner only
-      case '$nick': {
-        if (authorID !== '603550636545540096') break; // Only allow owner
-        const newNick = args.join(' ').trim();
-        if (!newNick) {
-          await message.reply('❌ Please provide a nickname. Usage: `$nick <nickname>`');
-          break;
-        }
-        try {
-          await message.member.setNickname(newNick);
-          await message.reply(`✅ Nickname changed to **${newNick}**`);
-        } catch (err) {
-          await message.reply('❌ Failed to change nickname. Do I have the right permissions?');
-        }
-        break;
-      }
-
-      // Add new case for $delete command
-      case '$delete': {
-        // Check if user has permission (Lieutenant or Sauce)
-        const hasPermission = message.member.roles.cache.has(JUNIOR_OFFICER_ROLE) || 
-                             message.author.id === '603550636545540096';
-        
-                  if (!hasPermission) {
-            const errorMsg = await message.channel.send("Whoa there, wannabe doctor! *adjusts imaginary glasses* I'm afraid your medical license is about as real as mine!");
-            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-            return;
-          }
-
-          const amount = parseInt(args[1]);
-          const validAmounts = [5, 10, 50];
-
-          if (!validAmounts.includes(amount)) {
-            const errorMsg = await message.channel.send("Pro tip: My totally legitimate medical license only allows me to work with 5, 10, or 50. Don't ask why, long story...");
-            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-            return;
-          }
-
-        try {
-          // Delete command message first
-          await message.delete();
-
-          // Then bulk delete the specified amount
-          const messages = await message.channel.messages.fetch({ limit: amount });
-          await message.channel.bulkDelete(messages);
-
-          // Send success message with random funny quote
-          const successMsg = await message.channel.send(DELETE_MESSAGES[Math.floor(Math.random() * DELETE_MESSAGES.length)]);
-          setTimeout(() => successMsg.delete().catch(() => {}), 5000);
-
-          // Add to audit log
-          addToAuditLog(`${formatName(message.author, message.guild)} deleted ${amount} messages in ${message.channel.name}`);
-        } catch (error) {
-          console.error('Delete error:', error);
-          const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-        }
-        break;
-      }
-
-      case '$fixed': {
-        // Check if user is Sauce
-        if (authorID !== '603550636545540096') {
-          const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can run this fix!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-          break;
-        }
-
-        try {
-          const statusMsg = await message.channel.send("🔄 *Puts on surgical gloves* Starting the role cleanup operation...");
-          
-          // Fetch all guild members
-          await message.guild.members.fetch();
-          const members = message.guild.members.cache;
-          
-          let fixedCount = 0;
-          let processedCount = 0;
-          
-          // Process each member
-          for (const [memberId, member] of members) {
-            if (member.user.bot) continue; // Skip bots
+          if (result) {
+            const actionText = isCheckOnly ? 'checked' : 'assigned';
+            const roleText = isCheckOnly ? '' : (result.roleAssigned ? `\n✅ **Role assigned:** ${result.veterancyLevel}` : '\n❌ **No role assigned** (under 1 month)');
             
-            processedCount++;
+            const resultText = `📊 **Veterancy ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}**\n\n**Member:** ${result.member}\n**Join Date:** ${result.joinDate}\n**Time in Server:** ${result.monthsInServer} months (${result.daysInServer} days)\n**Veterancy Level:** ${result.veterancyLevel}${roleText}`;
             
-            // Check if member has the Member role
-            if (member.roles.cache.has(REMOVE_ROLES.tra)) { // Changed from MEMBER_ROLE to REMOVE_ROLES.tra
-              let rolesRemoved = false;
-              
-              // Remove the specified roles if they have them
-              for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
-                if (member.roles.cache.has(roleId)) {
-                  await member.roles.remove(roleId);
-                  rolesRemoved = true;
-                }
-              }
-              
-              if (rolesRemoved) {
-                fixedCount++;
-                // Update status message every 10 members fixed
-                if (fixedCount % 10 === 0) {
-                  await statusMsg.edit(`🔄 *Adjusting roles...* Fixed ${fixedCount} members so far...`);
-                }
-              }
-            }
+            const successMsg = await message.channel.send(resultText);
+            setTimeout(() => successMsg.delete().catch(() => {}), 15000);
+
+            addToAuditLog(`${formatName(message.author, message.guild)} ${actionText} veterancy for ${result.member}`);
+          } else {
+            const errorMsg = await message.channel.send('❌ Could not determine veterancy for this user.');
+            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
           }
-
-          // Send completion message
-          const completionMsg = await message.channel.send(
-            `✅ *Removes gloves* Operation complete! I've processed ${processedCount} members and fixed ${fixedCount} of them.\n` +
-            `*Note: Removed Cadet, TRA, and Trainee roles from members who shouldn't have them.*`
-          );
-          
-          // Add to audit log
-          addToAuditLog(`${formatName(message.author, message.guild)} ran the fix command and cleaned up roles for ${fixedCount} members`);
-          
-          // Delete status message after completion
-          setTimeout(() => statusMsg.delete().catch(() => {}), 5000);
-          setTimeout(() => completionMsg.delete().catch(() => {}), 15000);
-
-        } catch (error) {
-          console.error('Fix command error:', error);
-          const errorMsg = await message.channel.send("*Drops medical equipment* Oops! Something went wrong during the operation!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
         }
-        break;
+      } catch (error) {
+        console.error('Veterancy error:', error);
+        const errorMsg = await message.channel.send(`❌ Error processing veterancy: ${error.message}`);
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
       }
+      break;
     }
+
+    case '$debugroles': {
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      try {
+        const roles = message.guild.roles.cache;
+        let roleList = '**Bot Version Info:**\n';
+        roleList += `Version: ${BOT_VERSION.version}\n`;
+        roleList += `Last Updated: ${BOT_VERSION.lastUpdated}\n\n`;
+        
+        roleList += '**Recent Changes:**\n';
+        BOT_VERSION.recentChanges.forEach(change => {
+          roleList += `• ${change}\n`;
+        });
+        
+        roleList += '\n**Organization Roles Status:**\n';
+        for (const [roleName, roleId] of Object.entries(IMPORTANT_ROLES)) {
+          const role = roles.get(roleId);
+          if (role) {
+            roleList += `✅ ${roleName}: ${role.name} (${role.id})\n`;
+          } else {
+            roleList += `❌ ${roleName}: Role not found (${roleId})\n`;
+          }
+        }
+
+        await message.channel.send(roleList);
+      } catch (error) {
+        console.error('Debug roles error:', error);
+        const errorMsg = await message.channel.send(`❌ Error listing roles: ${error.message}`);
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      }
+      break;
+    }
+
+    case '$eval': {
+      // Check if the user is a warrant officer or - - - - OFC - - - -
+      if (!hasRole(author, [WARRANT_OFFICER_ROLE, OFFICER_ROLE])) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to use this command. Only Warrant Officers and - - - - OFC - - - - can use this command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      // Check command format
+      if (args.length !== 2) {
+        const errorMsg = await message.channel.send('❌ Invalid command format. Use: `$eval @user rank` where rank is private, pfc, or lance');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      // Parse arguments
+      const userMention = args[0];
+      const rank = args[1].toLowerCase();
+      
+      // Validate rank
+      if (!['private', 'pfc', 'lance'].includes(rank)) {
+        const errorMsg = await message.channel.send('❌ Invalid rank. Must be one of: private, pfc, lance');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      try {
+        // Get the target user
+        const userID = userMention.replace(/[<@!>]/g, '');
+        const targetMember = await message.guild.members.fetch(userID);
+
+        // Check if user has Cadet role
+        if (!hasRole(targetMember, [REMOVE_ROLES.cadet])) {
+          const errorMsg = await message.channel.send('❌ This command can only be used on members with the Cadet role.');
+          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          break;
+        }
+
+        // Remove old roles
+        for (const roleID of Object.values(REMOVE_ROLES)) {
+          if (targetMember.roles.cache.has(roleID)) {
+            await targetMember.roles.remove(roleID);
+          }
+        }
+
+        // Add new rank role
+        await targetMember.roles.add(RANK_ROLES[rank]);
+
+        // Add additional roles
+        for (const roleID of Object.values(ADD_ROLES)) {
+          await targetMember.roles.add(roleID);
+        }
+
+        // Log the promotion
+        const successMsg = await message.channel.send(`✅ Successfully promoted ${targetMember.user.tag} to ${rank.toUpperCase()}`);
+        setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+        
+        // Add to audit log
+        addToAuditLog(`${formatName(message.author, message.guild)} promoted ${formatName(targetMember.user, message.guild)} to ${rank.toUpperCase()}`);
+      } catch (error) {
+        console.error('Eval command error:', error);
+        const errorMsg = await message.channel.send(`❌ Error executing command: ${error.message}`);
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+      }
+      break;
+    }
+
+    case '$reaction': {
+      // Check if user is Sauce
+      if (authorID !== '603550636545540096') {
+        const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can deploy the role selector!");
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      try {
+        // Check bot permissions
+        const botMember = message.guild.members.cache.get(client.user.id);
+        if (!botMember.permissions.has('ManageRoles')) {
+          const errorMsg = await message.channel.send("*Panics* I don't have permission to manage roles! Please give me the 'Manage Roles' permission!");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          return;
+        }
+
+        // Create the subfaction selection message
+        let messageContent = "**🏥 Welcome to Dr. Sauce's Subfaction Selector! 🏥**\n\n" +
+                           "React with the appropriate emoji to select your subfaction:\n\n";
+        
+        // Add subfaction descriptions
+        for (const faction of Object.values(SUBFACTION_ROLES)) {
+          messageContent += `${faction.emoji} - ${faction.name}\n`;
+        }
+        
+        messageContent += "\n*Note: You can only be in one subfaction at a time.*\n" +
+                        "*Your previous subfaction role will be removed when selecting a new one.*";
+
+        // Send the message and add reactions
+        const roleMessage = await message.channel.send(messageContent);
+        
+        // Add all reactions
+        for (const faction of Object.values(SUBFACTION_ROLES)) {
+          try {
+            await roleMessage.react(faction.emoji);
+          } catch (error) {
+            console.error(`Failed to add reaction ${faction.emoji}:`, error);
+          }
+        }
+
+        // Store the message ID and channel ID
+        reactionMessages.push({
+          messageId: roleMessage.id,
+          channelId: roleMessage.channel.id
+        });
+        saveReactionMessages();
+
+        // Set up the collector
+        setupReactionCollector(roleMessage);
+
+      } catch (error) {
+        console.error('Error in reaction command:', error);
+        await message.channel.send('*Drops all the medical equipment* Oops! Something went wrong setting up the reaction roles!');
+      }
+      break;
+    }
+
+    // HIDDEN: $nick command for owner only
+    case '$nick': {
+      if (authorID !== '603550636545540096') break; // Only allow owner
+      const newNick = args.join(' ').trim();
+      if (!newNick) {
+        await message.reply('❌ Please provide a nickname. Usage: `$nick <nickname>`');
+        break;
+      }
+      try {
+        await message.member.setNickname(newNick);
+        await message.reply(`✅ Nickname changed to **${newNick}**`);
+      } catch (err) {
+        await message.reply('❌ Failed to change nickname. Do I have the right permissions?');
+      }
+      break;
+    }
+
+    // Add new case for $delete command
+    case '$delete': {
+      // Check if user has permission (Lieutenant or Sauce)
+      const hasPermission = message.member.roles.cache.has(JUNIOR_OFFICER_ROLE) || 
+                           message.author.id === '603550636545540096';
+      
+                if (!hasPermission) {
+        const errorMsg = await message.channel.send("Whoa there, wannabe doctor! *adjusts imaginary glasses* I'm afraid your medical license is about as real as mine!");
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        return;
+      }
+
+      const amount = parseInt(args[1]);
+      const validAmounts = [5, 10, 50];
+
+      if (!validAmounts.includes(amount)) {
+        const errorMsg = await message.channel.send("Pro tip: My totally legitimate medical license only allows me to work with 5, 10, or 50. Don't ask why, long story...");
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        return;
+      }
+
+    try {
+      // Delete command message first
+      await message.delete();
+
+      // Then bulk delete the specified amount
+      const messages = await message.channel.messages.fetch({ limit: amount });
+      await message.channel.bulkDelete(messages);
+
+      // Send success message with random funny quote
+      const successMsg = await message.channel.send(DELETE_MESSAGES[Math.floor(Math.random() * DELETE_MESSAGES.length)]);
+      setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+
+      // Add to audit log
+      addToAuditLog(`${formatName(message.author, message.guild)} deleted ${amount} messages in ${message.channel.name}`);
+    } catch (error) {
+      console.error('Delete error:', error);
+      const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
+      setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+    }
+    break;
   }
+
+  case '$fixed': {
+    // Check if user is Sauce
+    if (authorID !== '603550636545540096') {
+      const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can run this fix!");
+      setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+      break;
+    }
+
+    try {
+      const statusMsg = await message.channel.send("🔄 *Puts on surgical gloves* Starting the role cleanup operation...");
+      
+      // Fetch all guild members
+      await message.guild.members.fetch();
+      const members = message.guild.members.cache;
+      
+      let fixedCount = 0;
+      let processedCount = 0;
+      
+      // Process each member
+      for (const [memberId, member] of members) {
+        if (member.user.bot) continue; // Skip bots
+        
+        processedCount++;
+        
+        // Check if member has the Member role
+        if (member.roles.cache.has(REMOVE_ROLES.tra)) { // Changed from MEMBER_ROLE to REMOVE_ROLES.tra
+          let rolesRemoved = false;
+          
+          // Remove the specified roles if they have them
+          for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
+            if (member.roles.cache.has(roleId)) {
+              await member.roles.remove(roleId);
+              rolesRemoved = true;
+            }
+          }
+          
+          if (rolesRemoved) {
+            fixedCount++;
+            // Update status message every 10 members fixed
+            if (fixedCount % 10 === 0) {
+              await statusMsg.edit(`🔄 *Adjusting roles...* Fixed ${fixedCount} members so far...`);
+            }
+          }
+        }
+      }
+
+      // Send completion message
+      const completionMsg = await message.channel.send(
+        `✅ *Removes gloves* Operation complete! I've processed ${processedCount} members and fixed ${fixedCount} of them.\n` +
+        `*Note: Removed Cadet, TRA, and Trainee roles from members who shouldn't have them.*`
+      );
+      
+      // Add to audit log
+      addToAuditLog(`${formatName(message.author, message.guild)} ran the fix command and cleaned up roles for ${fixedCount} members`);
+      
+      // Delete status message after completion
+      setTimeout(() => statusMsg.delete().catch(() => {}), 5000);
+      setTimeout(() => completionMsg.delete().catch(() => {}), 15000);
+
+    } catch (error) {
+      console.error('Fix command error:', error);
+      const errorMsg = await message.channel.send("*Drops medical equipment* Oops! Something went wrong during the operation!");
+      setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+    }
+    break;
+  }
+}
 };
 
-client.once('ready', async () => {
-  console.log(`Logged in as ${client.user.tag}!`);
-  await setupStoredReactionCollectors(client);
-});
+// Export the setup function
+module.exports = {
+  commands,
+  setupStoredReactionCollectors
+};
