@@ -4,7 +4,235 @@ const fs = require('fs');
 const subsections = require('./subsections.json');
 const userRoles = require('./userRoles.json');
 const deployPath = './deployMessages.json';
+const reactionMessagesPath = './reactionMessages.json';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+// Load or initialize reaction messages
+let reactionMessages = [];
+try {
+  reactionMessages = require(reactionMessagesPath);
+} catch (error) {
+  console.log('No reaction messages file found, initializing empty array');
+  reactionMessages = [];
+}
+
+// Function to save reaction message IDs
+function saveReactionMessages() {
+  fs.writeFileSync(reactionMessagesPath, JSON.stringify(reactionMessages, null, 2));
+}
+
+// Function to set up reaction collectors for stored messages
+async function setupStoredReactionCollectors(client) {
+  console.log('Setting up stored reaction collectors...');
+  for (const messageData of reactionMessages) {
+    try {
+      const channel = await client.channels.fetch(messageData.channelId);
+      if (!channel) {
+        console.error(`Channel ${messageData.channelId} not found`);
+        continue;
+      }
+
+      const message = await channel.messages.fetch(messageData.messageId);
+      if (!message) {
+        console.error(`Message ${messageData.messageId} not found in channel ${messageData.channelId}`);
+        continue;
+      }
+
+      console.log(`Setting up collector for message ${message.id} in channel ${channel.id}`);
+      setupReactionCollector(message);
+    } catch (error) {
+      console.error('Error setting up stored reaction collector:', error);
+    }
+  }
+}
+
+// Function to set up a reaction collector for a message
+function setupReactionCollector(message) {
+  const filter = (reaction, user) => {
+    if (user.bot) return false;
+
+    // Debug logging
+    console.log('Reaction received:', {
+      emoji: reaction.emoji.name,
+      emojiId: reaction.emoji.id,
+      userId: user.id,
+      isBot: user.bot,
+      availableEmojis: Object.values(SUBFACTION_ROLES).map(f => f.emoji)
+    });
+
+    // Check if the reaction emoji matches any of our subfaction emojis
+    const matches = Object.values(SUBFACTION_ROLES).some(faction => {
+      const reactionEmoji = reaction.emoji.name;
+      const matches = reactionEmoji === faction.emoji;
+      
+      console.log('Comparing emojis:', {
+        reaction: reactionEmoji,
+        faction: faction.emoji,
+        matches: matches
+      });
+      
+      return matches;
+    });
+
+    console.log('Final filter result:', matches);
+    return matches;
+  };
+
+  const collector = message.createReactionCollector({ filter });
+  
+  collector.on('collect', async (reaction, user) => {
+    try {
+      console.log('Starting role assignment for user:', user.tag);
+      const member = await message.guild.members.fetch(user.id);
+      
+      // Debug logging
+      console.log('Reaction collected:', {
+        emoji: reaction.emoji.name,
+        emojiId: reaction.emoji.id,
+        userId: user.id,
+        member: member.id,
+        memberRoles: Array.from(member.roles.cache.keys())
+      });
+
+      // Find the selected faction by matching emoji
+      const selectedFaction = Object.values(SUBFACTION_ROLES).find(faction => {
+        const reactionEmoji = reaction.emoji.name;
+        const matches = reactionEmoji === faction.emoji;
+        
+        // Debug logging for faction matching
+        console.log('Matching faction:', {
+          reaction: reactionEmoji,
+          faction: faction.emoji,
+          matches: matches,
+          factionId: faction.id,
+          factionName: faction.name
+        });
+        
+        return matches;
+      });
+      
+      if (!selectedFaction) {
+        console.error('No matching faction found for emoji:', {
+          reactionEmoji: reaction.emoji.name,
+          availableFactions: Object.values(SUBFACTION_ROLES).map(f => ({ name: f.name, emoji: f.emoji }))
+        });
+        return;
+      }
+
+      // Remove user's reaction
+      try {
+        await reaction.users.remove(user);
+      } catch (error) {
+        console.error('Failed to remove reaction:', error);
+        // Continue anyway as this isn't critical
+      }
+
+      // Verify the role exists
+      const roleToAdd = message.guild.roles.cache.get(selectedFaction.id);
+      console.log('Role verification:', {
+        roleId: selectedFaction.id,
+        roleExists: !!roleToAdd,
+        roleName: roleToAdd?.name
+      });
+      
+      if (!roleToAdd) {
+        console.error(`Role ${selectedFaction.id} not found in guild`);
+        const errorMsg = await message.channel.send(
+          `*Scratches head* I can't find the role for ${selectedFaction.name}. Please make sure it exists!`
+        );
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        return;
+      }
+
+      // Check if they already have this role
+      const hasRole = member.roles.cache.has(selectedFaction.id);
+      console.log('Role check:', {
+        userId: user.id,
+        roleId: selectedFaction.id,
+        hasRole: hasRole
+      });
+      
+      if (hasRole) {
+        const infoMsg = await message.channel.send(
+          `*Checks clipboard* ${user}, you're already in ${selectedFaction.name}! No changes needed. 🏥`
+        );
+        setTimeout(() => infoMsg.delete().catch(() => {}), 5000);
+        return;
+      }
+
+      // Remove all other subfaction roles
+      let removedRoles = [];
+      for (const faction of Object.values(SUBFACTION_ROLES)) {
+        if (member.roles.cache.has(faction.id)) {
+          try {
+            console.log(`Removing role ${faction.name} from ${user.tag}`);
+            await member.roles.remove(faction.id);
+            removedRoles.push(faction.name);
+          } catch (error) {
+            console.error(`Failed to remove role ${faction.name}:`, error);
+          }
+        }
+      }
+
+      // Add the selected role
+      try {
+        console.log(`Adding role ${selectedFaction.name} to ${user.tag}`);
+        await member.roles.add(selectedFaction.id);
+        console.log(`Successfully added role ${selectedFaction.name} to ${user.tag}`);
+      } catch (error) {
+        console.error(`Failed to add role ${selectedFaction.name}:`, error);
+        const errorMsg = await message.channel.send(
+          `*Drops clipboard* Failed to add the ${selectedFaction.name} role! Error: ${error.message}`
+        );
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        return;
+      }
+
+      // Add the organization role if they don't have it
+      const hasOrgRole = member.roles.cache.has(ORGANIZATION_ROLE);
+      console.log('Organization role check:', {
+        userId: user.id,
+        hasOrgRole: hasOrgRole
+      });
+      
+      if (!hasOrgRole) {
+        try {
+          console.log(`Adding organization role to ${user.tag}`);
+          await member.roles.add(ORGANIZATION_ROLE);
+          console.log(`Successfully added organization role to ${user.tag}`);
+        } catch (error) {
+          console.error('Failed to add organization role:', error);
+        }
+      }
+
+      // Send success message
+      let successMessage = `*Adjusts stethoscope* ${user}, you've been assigned to ${selectedFaction.name}! 🎉`;
+      if (removedRoles.length > 0) {
+        successMessage += `\n*Note: Removed from ${removedRoles.join(', ')}*`;
+      }
+      
+      const successMsg = await message.channel.send(successMessage);
+      setTimeout(() => successMsg.delete().catch(() => {}), 7000);
+
+      // Add to audit log
+      let auditMessage = `${formatName(user, message.guild)} selected the ${selectedFaction.name} subfaction`;
+      if (removedRoles.length > 0) {
+        auditMessage += ` (removed from ${removedRoles.join(', ')})`;
+      }
+      addToAuditLog(auditMessage);
+
+    } catch (error) {
+      console.error('Role assignment error:', error);
+      const errorMsg = await message.channel.send(
+        `*Drops clipboard* Oops! Something went wrong assigning the role for ${user}. Please try again later!\n` +
+        `Error: ${error.message}`
+      );
+      setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+    }
+  });
+
+  return collector;
+}
 
 let auditLog = [];
 let testingMode = false;
@@ -1014,204 +1242,19 @@ module.exports = {
             }
           }
 
-          // Set up reaction collector
-          const filter = (reaction, user) => {
-            if (user.bot) return false;
-
-            // Debug logging
-            console.log('Reaction received:', {
-              emoji: reaction.emoji.name,
-              emojiId: reaction.emoji.id,
-              userId: user.id,
-              isBot: user.bot,
-              availableEmojis: Object.values(SUBFACTION_ROLES).map(f => f.emoji)
-            });
-
-            // Check if the reaction emoji matches any of our subfaction emojis
-            const matches = Object.values(SUBFACTION_ROLES).some(faction => {
-              // Get the actual emoji character from the reaction
-              const reactionEmoji = reaction.emoji.name;
-              const matches = reactionEmoji === faction.emoji;
-              
-              // Debug logging for emoji matching
-              console.log('Comparing emojis:', {
-                reaction: reactionEmoji,
-                faction: faction.emoji,
-                matches: matches
-              });
-              
-              return matches;
-            });
-
-            console.log('Final filter result:', matches);
-            return matches;
-          };
-
-          const collector = roleMessage.createReactionCollector({ filter });
-
-          collector.on('collect', async (reaction, user) => {
-            try {
-              console.log('Starting role assignment for user:', user.tag);
-              const member = await message.guild.members.fetch(user.id);
-              
-              // Debug logging
-              console.log('Reaction collected:', {
-                emoji: reaction.emoji.name,
-                emojiId: reaction.emoji.id,
-                userId: user.id,
-                member: member.id,
-                memberRoles: Array.from(member.roles.cache.keys())
-              });
-
-              // Find the selected faction by matching emoji
-              const selectedFaction = Object.values(SUBFACTION_ROLES).find(faction => {
-                const reactionEmoji = reaction.emoji.name;
-                const matches = reactionEmoji === faction.emoji;
-                
-                // Debug logging for faction matching
-                console.log('Matching faction:', {
-                  reaction: reactionEmoji,
-                  faction: faction.emoji,
-                  matches: matches,
-                  factionId: faction.id,
-                  factionName: faction.name
-                });
-                
-                return matches;
-              });
-              
-              if (!selectedFaction) {
-                console.error('No matching faction found for emoji:', {
-                  reactionEmoji: reaction.emoji.name,
-                  availableFactions: Object.values(SUBFACTION_ROLES).map(f => ({ name: f.name, emoji: f.emoji }))
-                });
-                return;
-              }
-
-              // Remove user's reaction
-              try {
-                await reaction.users.remove(user);
-              } catch (error) {
-                console.error('Failed to remove reaction:', error);
-                // Continue anyway as this isn't critical
-              }
-
-              // Verify the role exists
-              const roleToAdd = message.guild.roles.cache.get(selectedFaction.id);
-              console.log('Role verification:', {
-                roleId: selectedFaction.id,
-                roleExists: !!roleToAdd,
-                roleName: roleToAdd?.name
-              });
-              
-              if (!roleToAdd) {
-                console.error(`Role ${selectedFaction.id} not found in guild`);
-                const errorMsg = await message.channel.send(
-                  `*Scratches head* I can't find the role for ${selectedFaction.name}. Please make sure it exists!`
-                );
-                setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-                return;
-              }
-
-              // Check if they already have this role
-              const hasRole = member.roles.cache.has(selectedFaction.id);
-              console.log('Role check:', {
-                userId: user.id,
-                roleId: selectedFaction.id,
-                hasRole: hasRole
-              });
-              
-              if (hasRole) {
-                const infoMsg = await message.channel.send(
-                  `*Checks clipboard* ${user}, you're already in ${selectedFaction.name}! No changes needed. 🏥`
-                );
-                setTimeout(() => infoMsg.delete().catch(() => {}), 5000);
-                return;
-              }
-
-              // Remove all other subfaction roles
-              let removedRoles = [];
-              for (const faction of Object.values(SUBFACTION_ROLES)) {
-                if (member.roles.cache.has(faction.id)) {
-                  try {
-                    console.log(`Removing role ${faction.name} from ${user.tag}`);
-                    await member.roles.remove(faction.id);
-                    removedRoles.push(faction.name);
-                  } catch (error) {
-                    console.error(`Failed to remove role ${faction.name}:`, error);
-                  }
-                }
-              }
-
-              // Add the selected role
-              try {
-                console.log(`Adding role ${selectedFaction.name} to ${user.tag}`);
-                await member.roles.add(selectedFaction.id);
-                console.log(`Successfully added role ${selectedFaction.name} to ${user.tag}`);
-              } catch (error) {
-                console.error(`Failed to add role ${selectedFaction.name}:`, error);
-                const errorMsg = await message.channel.send(
-                  `*Drops clipboard* Failed to add the ${selectedFaction.name} role! Error: ${error.message}`
-                );
-                setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-                return;
-              }
-
-              // Add the organization role if they don't have it
-              const hasOrgRole = member.roles.cache.has(ORGANIZATION_ROLE);
-              console.log('Organization role check:', {
-                userId: user.id,
-                hasOrgRole: hasOrgRole
-              });
-              
-              if (!hasOrgRole) {
-                try {
-                  console.log(`Adding organization role to ${user.tag}`);
-                  await member.roles.add(ORGANIZATION_ROLE);
-                  console.log(`Successfully added organization role to ${user.tag}`);
-                } catch (error) {
-                  console.error('Failed to add organization role:', error);
-                }
-              }
-
-              // Send success message
-              let successMessage = `*Adjusts stethoscope* ${user}, you've been assigned to ${selectedFaction.name}! 🎉`;
-              if (removedRoles.length > 0) {
-                successMessage += `\n*Note: Removed from ${removedRoles.join(', ')}*`;
-              }
-              
-              const successMsg = await message.channel.send(successMessage);
-              setTimeout(() => successMsg.delete().catch(() => {}), 7000);
-
-              // Add to audit log
-              let auditMessage = `${formatName(user, message.guild)} selected the ${selectedFaction.name} subfaction`;
-              if (removedRoles.length > 0) {
-                auditMessage += ` (removed from ${removedRoles.join(', ')})`;
-              }
-              addToAuditLog(auditMessage);
-
-            } catch (error) {
-              console.error('Role assignment error:', error);
-              const errorMsg = await message.channel.send(
-                `*Drops clipboard* Oops! Something went wrong assigning the role for ${user}. Please try again later!\n` +
-                `Error: ${error.message}`
-              );
-              setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-            }
+          // Store the message ID and channel ID
+          reactionMessages.push({
+            messageId: roleMessage.id,
+            channelId: roleMessage.channel.id
           });
+          saveReactionMessages();
 
-          // Handle collector errors
-          collector.on('error', error => {
-            console.error('Reaction collector error:', error);
-          });
+          // Set up the collector
+          setupReactionCollector(roleMessage);
 
         } catch (error) {
-          console.error('Role selector creation error:', error);
-          const errorMsg = await message.channel.send(
-            "*Fumbles with medical equipment* Oh no! Something went wrong creating the role selector!\n" +
-            `Error: ${error.message}`
-          );
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          console.error('Error in reaction command:', error);
+          await message.channel.send('*Drops all the medical equipment* Oops! Something went wrong setting up the reaction roles!');
         }
         break;
       }
@@ -1345,3 +1388,8 @@ module.exports = {
     }
   }
 };
+
+client.once('ready', async () => {
+  console.log(`Logged in as ${client.user.tag}!`);
+  await setupStoredReactionCollectors(client);
+});
