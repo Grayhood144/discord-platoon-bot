@@ -61,9 +61,11 @@ const DELETE_MESSAGES = [
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.1.1",
+  version: "2.1.2",
   lastUpdated: "2024-03-19",
   recentChanges: [
+    "Fixed reaction roles system with better emoji handling",
+    "Updated role IDs to match current server configuration",
     "Added hourly Disboard bump reminder",
     "Simplified $debugroles to show only important roles",
     "Added Dr. Sauce character responses",
@@ -74,11 +76,9 @@ const BOT_VERSION = {
 
 // Important role IDs to check
 const IMPORTANT_ROLES = {
-  'TRA': '1171577326766866442',
-  'Cadet': '1171577326766866443',
-  'Trainee': '1171577326766866444',
-  'Lieutenant': '1171577326766866445',
-  'Sauce': '1171577326766866446'
+  'TRA': '1305993273386729532',
+  'Cadet': '1295543221530787870',
+  'Trainee': '1295546993736679536'
 };
 
 // Subfaction roles
@@ -1192,11 +1192,11 @@ module.exports = {
             processedCount++;
             
             // Check if member has the Member role
-            if (member.roles.cache.has(MEMBER_ROLE)) {
+            if (member.roles.cache.has(REMOVE_ROLES.tra)) { // Changed from MEMBER_ROLE to REMOVE_ROLES.tra
               let rolesRemoved = false;
               
               // Remove the specified roles if they have them
-              for (const [roleName, roleId] of Object.entries(REMOVE_FROM_MEMBERS)) {
+              for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
                 if (member.roles.cache.has(roleId)) {
                   await member.roles.remove(roleId);
                   rolesRemoved = true;
