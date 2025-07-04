@@ -622,6 +622,52 @@ async function updateDeployMessage(client, fallbackChannel = null) {
   }
 }
 
+async function assignFactionRole(member, faction, message) {
+  // Verify the role exists
+  const roleToAdd = message.guild.roles.cache.get(faction.id);
+  if (!roleToAdd) {
+    await message.channel.send(`*Scratches head* I can't find the role for ${faction.name}. Please notify an admin!`);
+    return;
+  }
+
+  // Check if they already have this role
+  if (member.roles.cache.has(faction.id)) {
+    await message.channel.send(`*Checks clipboard* You're already in ${faction.name}! No changes needed. 🏥`);
+    return;
+  }
+
+  // Remove all other subfaction roles
+  let removedRoles = [];
+  for (const otherFaction of Object.values(SUBFACTION_ROLES)) {
+    if (member.roles.cache.has(otherFaction.id)) {
+      await member.roles.remove(otherFaction.id);
+      removedRoles.push(otherFaction.name);
+    }
+  }
+
+  // Add the selected role
+  await member.roles.add(faction.id);
+
+  // Add the organization role if they don't have it
+  if (!member.roles.cache.has(ORGANIZATION_ROLE)) {
+    await member.roles.add(ORGANIZATION_ROLE);
+  }
+
+  // Send success message
+  let successMessage = `*Adjusts stethoscope* You've been assigned to ${faction.name}! 🎉`;
+  if (removedRoles.length > 0) {
+    successMessage += `\n*Note: Removed from ${removedRoles.join(', ')}*`;
+  }
+  await message.channel.send(successMessage);
+
+  // Add to audit log
+  let auditMessage = `${formatName(member.user, message.guild)} selected the ${faction.name} subfaction`;
+  if (removedRoles.length > 0) {
+    auditMessage += ` (removed from ${removedRoles.join(', ')})`;
+  }
+  addToAuditLog(auditMessage);
+}
+
 const commands = async (message, client) => {
   if (
     !message.content.startsWith('$') &&
@@ -1254,6 +1300,105 @@ const commands = async (message, client) => {
       } catch (error) {
         console.error('Error in reaction command:', error);
         await message.channel.send('*Drops all the medical equipment* Oops! Something went wrong setting up the reaction roles!');
+      }
+      break;
+    }
+
+    case '$reticle': {
+      try {
+        const member = message.member;
+        const faction = SUBFACTION_ROLES.RETICLE;
+        await assignFactionRole(member, faction, message);
+      } catch (error) {
+        console.error('Error assigning RETICLE role:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
+    case '$calibre': {
+      try {
+        const member = message.member;
+        const faction = SUBFACTION_ROLES.CALIBRE;
+        await assignFactionRole(member, faction, message);
+      } catch (error) {
+        console.error('Error assigning CALIBRE role:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
+    case '$diesel': {
+      try {
+        const member = message.member;
+        const faction = SUBFACTION_ROLES.DIESEL;
+        await assignFactionRole(member, faction, message);
+      } catch (error) {
+        console.error('Error assigning DIESEL role:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
+    case '$stalker': {
+      try {
+        const member = message.member;
+        const faction = SUBFACTION_ROLES.STALKER;
+        await assignFactionRole(member, faction, message);
+      } catch (error) {
+        console.error('Error assigning STALKER role:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
+    case '$meth': {
+      try {
+        const member = message.member;
+        const faction = SUBFACTION_ROLES.METH;
+        await assignFactionRole(member, faction, message);
+      } catch (error) {
+        console.error('Error assigning METH role:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
+    case '$geneva': {
+      try {
+        const member = message.member;
+        const faction = SUBFACTION_ROLES.GENEVA;
+        await assignFactionRole(member, faction, message);
+      } catch (error) {
+        console.error('Error assigning GENEVA role:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
+    case '$static': {
+      try {
+        const member = message.member;
+        const faction = SUBFACTION_ROLES.STATIC;
+        await assignFactionRole(member, faction, message);
+      } catch (error) {
+        console.error('Error assigning STATIC role:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+      }
+      break;
+    }
+
+    case '$factions': {
+      try {
+        let helpText = '**Available Faction Commands:**\n\n';
+        Object.values(SUBFACTION_ROLES).forEach(faction => {
+          helpText += `\`$${faction.name.toLowerCase().replace(/\./g, '')}\` - Join ${faction.name}\n`;
+        });
+        helpText += '\n*Note: You can only be in one faction at a time.*';
+        await message.channel.send(helpText);
+      } catch (error) {
+        console.error('Error showing faction help:', error);
+        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
       }
       break;
     }
