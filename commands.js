@@ -24,6 +24,8 @@ function saveReactionMessages() {
 // Function to set up reaction collectors for stored messages
 async function setupStoredReactionCollectors(client) {
   console.log('Setting up stored reaction collectors...');
+  const validMessages = [];
+
   for (const messageData of reactionMessages) {
     try {
       const channel = await client.channels.fetch(messageData.channelId);
@@ -32,17 +34,33 @@ async function setupStoredReactionCollectors(client) {
         continue;
       }
 
-      const message = await channel.messages.fetch(messageData.messageId);
-      if (!message) {
-        console.error(`Message ${messageData.messageId} not found in channel ${messageData.channelId}`);
-        continue;
-      }
+      try {
+        const message = await channel.messages.fetch(messageData.messageId);
+        if (!message) {
+          console.error(`Message ${messageData.messageId} not found in channel ${messageData.channelId}`);
+          continue;
+        }
 
-      console.log(`Setting up collector for message ${message.id} in channel ${channel.id}`);
-      setupReactionCollector(message);
+        console.log(`Setting up collector for message ${message.id} in channel ${channel.id}`);
+        setupReactionCollector(message);
+        validMessages.push(messageData);
+      } catch (error) {
+        if (error.code === 10008) { // Unknown Message error
+          console.log(`Message ${messageData.messageId} no longer exists, skipping...`);
+        } else {
+          console.error(`Error fetching message ${messageData.messageId}:`, error);
+        }
+      }
     } catch (error) {
       console.error('Error setting up stored reaction collector:', error);
     }
+  }
+
+  // Update reactionMessages with only valid messages
+  if (validMessages.length !== reactionMessages.length) {
+    reactionMessages = validMessages;
+    saveReactionMessages();
+    console.log('Updated reaction messages list with only valid messages');
   }
 }
 
