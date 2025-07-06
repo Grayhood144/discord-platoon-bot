@@ -7,7 +7,6 @@ const path = require('path');
 const handleMessageCleanup = require('./messageCleaner');
 const commandModule = require('./commands');
 const drSauce = require('./drSauce');
-const aiHandler = require('./aiHandler');
 
 // Role IDs for new members
 const NEW_MEMBER_ROLES = {
@@ -104,17 +103,6 @@ client.on('guildMemberAdd', async (member) => {
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-
-  // Check if the AI should respond
-  if (aiHandler.shouldRespondToMessage(message, client)) {
-    try {
-      const response = await aiHandler.handleAIConversation(message);
-      await message.reply(response);
-      return;
-    } catch (error) {
-      console.error('Error handling AI conversation:', error);
-    }
-  }
 
   // Check if Dr. Sauce should respond
   const response = drSauce.shouldDrSauceRespond(message);

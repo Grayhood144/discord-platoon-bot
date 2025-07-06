@@ -33,8 +33,7 @@
   "homepage": "https://github.com/yourusername/discord-platoon-bot#readme",
   "dependencies": {
     "discord.js": "^14.19.3",
-    "dotenv": "^16.5.0",
-    "openai": "^4.28.0"
+    "dotenv": "^16.5.0"
   },
   "devDependencies": {
     "pm2": "^5.3.0"
