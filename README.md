@@ -177,7 +177,7 @@ If you encounter any issues or have questions:
 
 ---
 
-**Last updated**: Test deployment with AWS Lightsail configuration (IP: 35.174.10.190)
+**Last updated**: Removed AWS Lightsail configuration
 # Deployment trigger - 06/16/2025 20:55:32
 
 <!-- Deployment trigger - 06/18/2025 03:06:00 -->
