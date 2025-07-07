@@ -1,259 +1,91 @@
-// Useless change to trigger redeploy
 // commands.js
 const fs = require('fs');
 const subsections = require('./subsections.json');
 const userRoles = require('./userRoles.json');
 const deployPath = './deployMessages.json';
-const reactionMessagesPath = './reactionMessages.json';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-// Load or initialize reaction messages
-let reactionMessages = [];
-try {
-  reactionMessages = require(reactionMessagesPath);
-} catch (error) {
-  console.log('No reaction messages file found, initializing empty array');
-  reactionMessages = [];
+function saveJSON(path, data) {
+  fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
 
-// Function to save reaction message IDs
-function saveReactionMessages() {
-  fs.writeFileSync(reactionMessagesPath, JSON.stringify(reactionMessages, null, 2));
-}
-
-// Function to set up reaction collectors for stored messages
-async function setupStoredReactionCollectors(client) {
-  console.log('Setting up stored reaction collectors...');
-  const validMessages = [];
-
-  for (const messageData of reactionMessages) {
-    try {
-      const channel = await client.channels.fetch(messageData.channelId);
-      if (!channel) {
-        console.error(`Channel ${messageData.channelId} not found`);
-        continue;
-      }
-
-      try {
-        const message = await channel.messages.fetch(messageData.messageId);
-        if (!message) {
-          console.error(`Message ${messageData.messageId} not found in channel ${messageData.channelId}`);
-          continue;
-        }
-
-        console.log(`Setting up collector for message ${message.id} in channel ${channel.id}`);
-        setupReactionCollector(message);
-        validMessages.push(messageData);
-      } catch (error) {
-        if (error.code === 10008) { // Unknown Message error
-          console.log(`Message ${messageData.messageId} no longer exists, skipping...`);
-        } else {
-          console.error(`Error fetching message ${messageData.messageId}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error('Error setting up stored reaction collector:', error);
-    }
+function formatName(user, guild = null) {
+  if (!user) return 'Unknown User';
+  if (guild && guild.members.cache.has(user.id)) {
+    return guild.members.cache.get(user.id).displayName;
   }
+  return user.username;
+}
 
-  // Update reactionMessages with only valid messages
-  if (validMessages.length !== reactionMessages.length) {
-    reactionMessages = validMessages;
-    saveReactionMessages();
-    console.log('Updated reaction messages list with only valid messages');
+function hasRole(member, ids) {
+  return member.roles.cache.some(role => ids.includes(role.id));
+}
+
+function addToAuditLog(action) {
+  console.log(`[AUDIT] ${action}`);
+}
+
+async function checkAndAssignVeterancy(member, guild) {
+  try {
+    const joinDate = member.joinedAt;
+    if (!joinDate) {
+      console.log(`Could not determine join date for ${member.user.username}`);
+      return null;
+    }
+
+    const now = new Date();
+    const timeInServer = now - joinDate;
+    const monthsInServer = Math.floor(timeInServer / (1000 * 60 * 60 * 24 * 30.44)); // Average days per month
+    const daysInServer = Math.floor(timeInServer / (1000 * 60 * 60 * 24));
+
+    let appropriateRole = null;
+    let veterancyLevel = 'None';
+
+    // Determine appropriate veterancy role
+    if (monthsInServer >= 12) {
+      appropriateRole = VETERANCY_ROLES['1st Degree'];
+      veterancyLevel = '1st Degree';
+    } else if (monthsInServer >= 9) {
+      appropriateRole = VETERANCY_ROLES['2nd Degree'];
+      veterancyLevel = '2nd Degree';
+    } else if (monthsInServer >= 6) {
+      appropriateRole = VETERANCY_ROLES['3rd Degree'];
+      veterancyLevel = '3rd Degree';
+    } else if (monthsInServer >= 3) {
+      appropriateRole = VETERANCY_ROLES['4th Degree'];
+      veterancyLevel = '4th Degree';
+    } else if (monthsInServer >= 1) {
+      appropriateRole = VETERANCY_ROLES['5th Degree'];
+      veterancyLevel = '5th Degree';
+    }
+
+    // Remove all existing veterancy roles
+    for (const roleId of Object.values(VETERANCY_ROLES)) {
+      if (member.roles.cache.has(roleId)) {
+        await member.roles.remove(roleId);
+      }
+    }
+
+    // Add appropriate veterancy role
+    if (appropriateRole) {
+      await member.roles.add(appropriateRole);
+      console.log(`✅ Assigned ${veterancyLevel} veterancy to ${member.user.username}`);
+    }
+
+    return {
+      member: member.user.username,
+      joinDate: joinDate.toISOString().split('T')[0],
+      daysInServer,
+      monthsInServer,
+      veterancyLevel,
+      roleAssigned: appropriateRole ? true : false
+    };
+
+  } catch (error) {
+    console.error(`Error checking veterancy for ${member.user.username}:`, error);
+    return null;
   }
 }
-
-// Function to set up a reaction collector for a message
-function setupReactionCollector(message) {
-  const filter = (reaction, user) => {
-    if (user.bot) return false;
-
-    // Debug logging
-    console.log('Reaction received:', {
-      emoji: reaction.emoji.name,
-      emojiId: reaction.emoji.id,
-      userId: user.id,
-      isBot: user.bot,
-      availableEmojis: Object.values(SUBFACTION_ROLES).map(f => f.emoji)
-    });
-
-    // Check if the reaction emoji matches any of our subfaction emojis
-    const matches = Object.values(SUBFACTION_ROLES).some(faction => {
-      const reactionEmoji = reaction.emoji.name;
-      const matches = reactionEmoji === faction.emoji;
-      
-      console.log('Comparing emojis:', {
-        reaction: reactionEmoji,
-        faction: faction.emoji,
-        matches: matches
-      });
-      
-      return matches;
-    });
-
-    console.log('Final filter result:', matches);
-    return matches;
-  };
-
-  const collector = message.createReactionCollector({ filter });
-  
-  collector.on('collect', async (reaction, user) => {
-    try {
-      console.log('Starting role assignment for user:', user.tag);
-      const member = await message.guild.members.fetch(user.id);
-      
-      // Debug logging
-      console.log('Reaction collected:', {
-        emoji: reaction.emoji.name,
-        emojiId: reaction.emoji.id,
-        userId: user.id,
-        member: member.id,
-        memberRoles: Array.from(member.roles.cache.keys())
-      });
-
-      // Find the selected faction by matching emoji
-      const selectedFaction = Object.values(SUBFACTION_ROLES).find(faction => {
-        const reactionEmoji = reaction.emoji.name;
-        const matches = reactionEmoji === faction.emoji;
-        
-        // Debug logging for faction matching
-        console.log('Matching faction:', {
-          reaction: reactionEmoji,
-          faction: faction.emoji,
-          matches: matches,
-          factionId: faction.id,
-          factionName: faction.name
-        });
-        
-        return matches;
-      });
-      
-      if (!selectedFaction) {
-        console.error('No matching faction found for emoji:', {
-          reactionEmoji: reaction.emoji.name,
-          availableFactions: Object.values(SUBFACTION_ROLES).map(f => ({ name: f.name, emoji: f.emoji }))
-        });
-        return;
-      }
-
-      // Remove user's reaction
-      try {
-        await reaction.users.remove(user);
-      } catch (error) {
-        console.error('Failed to remove reaction:', error);
-        // Continue anyway as this isn't critical
-      }
-
-      // Verify the role exists
-      const roleToAdd = message.guild.roles.cache.get(selectedFaction.id);
-      console.log('Role verification:', {
-        roleId: selectedFaction.id,
-        roleExists: !!roleToAdd,
-        roleName: roleToAdd?.name
-      });
-      
-      if (!roleToAdd) {
-        console.error(`Role ${selectedFaction.id} not found in guild`);
-        const errorMsg = await message.channel.send(
-          `*Scratches head* I can't find the role for ${selectedFaction.name}. Please make sure it exists!`
-        );
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        return;
-      }
-
-      // Check if they already have this role
-      const hasRole = member.roles.cache.has(selectedFaction.id);
-      console.log('Role check:', {
-        userId: user.id,
-        roleId: selectedFaction.id,
-        hasRole: hasRole
-      });
-      
-      if (hasRole) {
-        const infoMsg = await message.channel.send(
-          `*Checks clipboard* ${user}, you're already in ${selectedFaction.name}! No changes needed. 🏥`
-        );
-        setTimeout(() => infoMsg.delete().catch(() => {}), 5000);
-        return;
-      }
-
-      // Remove all other subfaction roles
-      let removedRoles = [];
-      for (const faction of Object.values(SUBFACTION_ROLES)) {
-        if (member.roles.cache.has(faction.id)) {
-          try {
-            console.log(`Removing role ${faction.name} from ${user.tag}`);
-            await member.roles.remove(faction.id);
-            removedRoles.push(faction.name);
-          } catch (error) {
-            console.error(`Failed to remove role ${faction.name}:`, error);
-          }
-        }
-      }
-
-      // Add the selected role
-      try {
-        console.log(`Adding role ${selectedFaction.name} to ${user.tag}`);
-        await member.roles.add(selectedFaction.id);
-        console.log(`Successfully added role ${selectedFaction.name} to ${user.tag}`);
-      } catch (error) {
-        console.error(`Failed to add role ${selectedFaction.name}:`, error);
-        const errorMsg = await message.channel.send(
-          `*Drops clipboard* Failed to add the ${selectedFaction.name} role! Error: ${error.message}`
-        );
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-        return;
-      }
-
-      // Add the organization role if they don't have it
-      const hasOrgRole = member.roles.cache.has(ORGANIZATION_ROLE);
-      console.log('Organization role check:', {
-        userId: user.id,
-        hasOrgRole: hasOrgRole
-      });
-      
-      if (!hasOrgRole) {
-        try {
-          console.log(`Adding organization role to ${user.tag}`);
-          await member.roles.add(ORGANIZATION_ROLE);
-          console.log(`Successfully added organization role to ${user.tag}`);
-        } catch (error) {
-          console.error('Failed to add organization role:', error);
-        }
-      }
-
-      // Send success message
-      let successMessage = `*Adjusts stethoscope* ${user}, you've been assigned to ${selectedFaction.name}! 🎉`;
-      if (removedRoles.length > 0) {
-        successMessage += `\n*Note: Removed from ${removedRoles.join(', ')}*`;
-      }
-      
-      const successMsg = await message.channel.send(successMessage);
-      setTimeout(() => successMsg.delete().catch(() => {}), 7000);
-
-      // Add to audit log
-      let auditMessage = `${formatName(user, message.guild)} selected the ${selectedFaction.name} subfaction`;
-      if (removedRoles.length > 0) {
-        auditMessage += ` (removed from ${removedRoles.join(', ')})`;
-      }
-      addToAuditLog(auditMessage);
-
-    } catch (error) {
-      console.error('Role assignment error:', error);
-      const errorMsg = await message.channel.send(
-        `*Drops clipboard* Oops! Something went wrong assigning the role for ${user}. Please try again later!\n` +
-        `Error: ${error.message}`
-      );
-      setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-    }
-  });
-
-  return collector;
-}
-
-let auditLog = [];
-let testingMode = false;
 
 // Veterancy role IDs
 const VETERANCY_ROLES = {
@@ -367,95 +199,6 @@ const SUBFACTION_ROLES = {
   }
 };
 
-function saveJSON(path, data) {
-  fs.writeFileSync(path, JSON.stringify(data, null, 2));
-}
-
-function formatName(user, guild = null) {
-  if (guild && user.id) {
-    const member = guild.members.cache.get(user.id);
-    if (member && member.displayName) {
-      return `${member.displayName}`;
-    }
-  }
-  return `${user.username}`;
-}
-
-function hasRole(member, ids) {
-  return member.roles.cache.some(role => ids.includes(role.id));
-}
-
-function addToAuditLog(action) {
-  auditLog.push(`${new Date().toISOString()} - ${action}`);
-  if (auditLog.length > 100) {
-    auditLog = auditLog.slice(-100);
-  }
-}
-
-// Function to calculate member veterancy and assign appropriate role
-async function checkAndAssignVeterancy(member, guild) {
-  try {
-    const joinDate = member.joinedAt;
-    if (!joinDate) {
-      console.log(`Could not determine join date for ${member.user.username}`);
-      return null;
-    }
-
-    const now = new Date();
-    const timeInServer = now - joinDate;
-    const monthsInServer = Math.floor(timeInServer / (1000 * 60 * 60 * 24 * 30.44)); // Average days per month
-    const daysInServer = Math.floor(timeInServer / (1000 * 60 * 60 * 24));
-
-    let appropriateRole = null;
-    let veterancyLevel = 'None';
-
-    // Determine appropriate veterancy role
-    if (monthsInServer >= 12) {
-      appropriateRole = VETERANCY_ROLES['1st Degree'];
-      veterancyLevel = '1st Degree';
-    } else if (monthsInServer >= 9) {
-      appropriateRole = VETERANCY_ROLES['2nd Degree'];
-      veterancyLevel = '2nd Degree';
-    } else if (monthsInServer >= 6) {
-      appropriateRole = VETERANCY_ROLES['3rd Degree'];
-      veterancyLevel = '3rd Degree';
-    } else if (monthsInServer >= 3) {
-      appropriateRole = VETERANCY_ROLES['4th Degree'];
-      veterancyLevel = '4th Degree';
-    } else if (monthsInServer >= 1) {
-      appropriateRole = VETERANCY_ROLES['5th Degree'];
-      veterancyLevel = '5th Degree';
-    }
-
-    // Remove all existing veterancy roles
-    for (const roleId of Object.values(VETERANCY_ROLES)) {
-      if (member.roles.cache.has(roleId)) {
-        await member.roles.remove(roleId);
-      }
-    }
-
-    // Add appropriate veterancy role
-    if (appropriateRole) {
-      await member.roles.add(appropriateRole);
-      console.log(`✅ Assigned ${veterancyLevel} veterancy to ${member.user.username}`);
-    }
-
-    return {
-      member: member.user.username,
-      joinDate: joinDate.toISOString().split('T')[0],
-      daysInServer,
-      monthsInServer,
-      veterancyLevel,
-      roleAssigned: appropriateRole ? true : false
-    };
-
-  } catch (error) {
-    console.error(`Error checking veterancy for ${member.user.username}:`, error);
-    return null;
-  }
-}
-
-// Function to get role IDs from the JSON structure
 function getRoleIDs(server = 'server1') {
   const roleIDs = subsections.roleIDs?.[server];
   if (!roleIDs) {
@@ -1264,64 +1007,6 @@ const commands = async (message, client) => {
       break;
     }
 
-    case '$reaction': {
-      // Check if user is Sauce
-      if (authorID !== '603550636545540096') {
-        const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can deploy the role selector!");
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
-        break;
-      }
-
-      try {
-        // Check bot permissions
-        const botMember = message.guild.members.cache.get(client.user.id);
-        if (!botMember.permissions.has('ManageRoles')) {
-          const errorMsg = await message.channel.send("*Panics* I don't have permission to manage roles! Please give me the 'Manage Roles' permission!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
-          return;
-        }
-
-        // Create the subfaction selection message
-        let messageContent = "**🏥 Welcome to Dr. Sauce's Subfaction Selector! 🏥**\n\n" +
-                           "React with the appropriate emoji to select your subfaction:\n\n";
-        
-        // Add subfaction descriptions
-        for (const faction of Object.values(SUBFACTION_ROLES)) {
-          messageContent += `${faction.emoji} - ${faction.name}\n`;
-        }
-        
-        messageContent += "\n*Note: You can only be in one subfaction at a time.*\n" +
-                        "*Your previous subfaction role will be removed when selecting a new one.*";
-
-        // Send the message and add reactions
-        const roleMessage = await message.channel.send(messageContent);
-        
-        // Add all reactions
-        for (const faction of Object.values(SUBFACTION_ROLES)) {
-          try {
-            await roleMessage.react(faction.emoji);
-          } catch (error) {
-            console.error(`Failed to add reaction ${faction.emoji}:`, error);
-          }
-        }
-
-        // Store the message ID and channel ID
-        reactionMessages.push({
-          messageId: roleMessage.id,
-          channelId: roleMessage.channel.id
-        });
-        saveReactionMessages();
-
-        // Set up the collector
-        setupReactionCollector(roleMessage);
-
-      } catch (error) {
-        console.error('Error in reaction command:', error);
-        await message.channel.send('*Drops all the medical equipment* Oops! Something went wrong setting up the reaction roles!');
-      }
-      break;
-    }
-
     case '$reticle': {
       try {
         const member = message.member;
@@ -1596,5 +1281,7 @@ const commands = async (message, client) => {
 // Export the setup function
 module.exports = {
   commands,
-  setupStoredReactionCollectors
+  assignFactionRole,
+  updateDeployMessage,
+  checkAndAssignVeterancy
 };
