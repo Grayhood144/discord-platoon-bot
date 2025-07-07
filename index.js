@@ -15,6 +15,9 @@ const NEW_MEMBER_ROLES = {
   'trainee': '1295546993736679536'
 };
 
+// Member role ID
+const MEMBER_ROLE_ID = '1305992733835399238'; // - - - - OFC - - - - role ID
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -65,6 +68,11 @@ client.once('ready', async () => {
 // Function to check and assign roles for a single member
 async function checkAndAssignNewMemberRoles(member) {
   try {
+    // If they have the member role, don't give them new member roles
+    if (member.roles.cache.has(MEMBER_ROLE_ID)) {
+      return;
+    }
+
     // Check if member already has any of the new member roles
     const hasAnyRole = Object.values(NEW_MEMBER_ROLES).some(roleId => 
       member.roles.cache.has(roleId)
