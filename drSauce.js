@@ -1,144 +1,144 @@
-// drSauce.js - A chaotic field doctor from Helldivers 2
+// drSauce.js - Stories and tales from the legendary Sauce
 const SAUCE_USER_ID = '603550636545540096';
 const LEO_USER_ID = '544946624506495009';
 
-// Quote categories with 20 quotes each
+// Quote categories with story-style quotes
 const STARTERS = [
-    "BY THE POWER OF SCIENCE!",
-    "GREETINGS, TEST SUBJECTS!",
-    "AH, FRESH MEAT FOR THE GRINDER!",
-    "WHO NEEDS A DOSE OF FREEDOM?",
-    "TIME FOR SOME FIELD TESTING!",
-    "DOCTOR IN THE HOUSE!",
-    "MEDICAL EMERGENCY? I THINK YES!",
-    "WHO'S READY FOR TREATMENT?",
-    "SCIENCE WAITS FOR NO ONE!",
-    "EXPERIMENTAL MEDICINE TIME!",
-    "PAGING DR. SAUCE!",
-    "MEDICAL CHAOS INCOMING!",
-    "WHO ORDERED THE DOCTOR?",
-    "TIME TO PRACTICE MEDICINE!",
-    "DOCTOR'S ORDERS!",
-    "MEDICAL MAYHEM ACTIVATED!",
-    "READY FOR YOUR CHECKUP?",
-    "THE DOCTOR WILL SEE YOU NOW!",
-    "MEDICAL EMERGENCY? PERFECT!",
-    "TIME TO SPREAD SOME HEALING!"
+    "You know, this reminds me of that time in the Outer Rim...",
+    "Hah! Back in my early days of spreading chaos...",
+    "Let me tell you about my finest moment of tactical brilliance...",
+    "There I was, surrounded by opportunities for mayhem...",
+    "You think THIS is chaos? Let me tell you about last Tuesday...",
+    "Gather 'round, let me tell you about the Great Explosion of '24...",
+    "This one time, during a particularly spicy deployment...",
+    "Picture this: me, three mechs, and a crate of experimental weapons...",
+    "Funny story about tactical superiority...",
+    "So there I was, testing the limits of 'acceptable collateral damage'...",
+    "Ever heard about the Incident? No, the OTHER Incident...",
+    "Remember that time I 'accidentally' improved an entire defense system?",
+    "Let me share a little story about proper explosive placement...",
+    "You haven't lived until you've seen a mech dance. Let me explain...",
+    "This reminds me of my favorite tactical experiment...",
+    "Want to hear about my most spectacular 'field test'?",
+    "There's an art to chaos, and this one time...",
+    "I once found out how many drones it takes to... well, listen...",
+    "Ever wonder why that crater is perfectly square? Funny story...",
+    "Let me tell you about my proudest moment of 'strategic demolition'..."
 ];
 
 const MIDDLES = [
-    "My diagnosis? MORE EXPLOSIONS!",
-    "This might sting... A LOT!",
-    "Side effects may include VICTORY!",
-    "The cure is MORE DAKKA!",
-    "Take two grenades and call me never!",
-    "I prescribe MAXIMUM FIREPOWER!",
-    "Your treatment plan? CHAOS!",
-    "The best medicine is REVENGE!",
-    "This won't hurt a bit... ME!",
-    "Time for aggressive treatment!",
-    "The prognosis is DESTRUCTION!",
-    "Medicine is just spicy science!",
-    "Your insurance covers this... probably!",
-    "Treatment is non-negotiable!",
-    "This might leave a scar... or ten!",
-    "The cure is MORE BULLETS!",
-    "Time for experimental procedures!",
-    "Your condition is... PERFECT!",
-    "Let's try something NEW!",
-    "This might be unethical... PERFECT!"
-];
-
-const ENDINGS = [
-    "FOR SCIENCE!",
-    "FOR SUPER EARTH!",
-    "DEMOCRACY DELIVERED!",
-    "TREATMENT COMPLETE!",
-    "NEXT PATIENT PLEASE!",
-    "SCIENCE PREVAILS!",
-    "EXPERIMENT SUCCESSFUL!",
-    "DEMOCRACY IS NON-NEGOTIABLE!",
-    "MEDICAL VICTORY ACHIEVED!",
-    "PATIENT STATUS: LIBERATED!",
-    "FREEDOM ADMINISTERED!",
-    "DIAGNOSIS: SUCCESSFUL!",
-    "MEDICAL MISSION COMPLETE!",
-    "DEMOCRACY DISPENSED!",
-    "TREATMENT SUCCESSFUL!",
-    "SCIENCE WINS AGAIN!",
-    "MEDICAL EXCELLENCE!",
-    "EXPERIMENT CONCLUDED!",
-    "FREEDOM DELIVERED!",
-    "DOCTOR OUT!"
-];
-
-const SIGNATURES = [
-    "- Dr. Sauce, MD (Mad Doctor)",
-    "- Dr. Sauce, PhD in CHAOS",
-    "- Dr. Sauce, Master of Medical Mayhem",
-    "- Dr. Sauce, Professional Chaos Agent",
-    "- Dr. Sauce, Field Medicine Enthusiast",
-    "- Dr. Sauce, Democracy Distributor",
-    "- Dr. Sauce, Experimental Expert",
-    "- Dr. Sauce, Science Enthusiast",
-    "- Dr. Sauce, Liberty Dispenser",
-    "- Dr. Sauce, Chaos Practitioner",
-    "- Dr. Sauce, Freedom Pharmacist",
-    "- Dr. Sauce, Medical Maverick",
-    "- Dr. Sauce, Battlefield Biochemist",
-    "- Dr. Sauce, Combat Medic Supreme",
-    "- Dr. Sauce, Liberty's Physician",
-    "- Dr. Sauce, Democracy's Doctor",
-    "- Dr. Sauce, Chaos Consultant",
-    "- Dr. Sauce, Medical Mercenary",
-    "- Dr. Sauce, Science Specialist",
-    "- Dr. Sauce, Freedom's Physician"
+    "So there I was, calibrating the targeting system with my signature 'improvements'...",
+    "Next thing you know, the experimental shield generator started making this FASCINATING humming sound...",
+    "Turns out, you CAN improve a mech's performance with enough determination and questionable modifications...",
+    "The best part? Nobody even noticed the extra explosives I'd carefully 'stored' in the defense perimeter...",
+    "That's when I discovered you can actually overclock a sentry turret to play music...",
+    "The look on their faces when the drone started doing loop-de-loops was PRICELESS...",
+    "Who knew you could make a shield generator create pretty light shows AND be more effective?",
+    "The mech wasn't SUPPOSED to do that, but I'd say the results speak for themselves...",
+    "Three hours of 'calibration' later, and that defensive line was more of an aggressive line...",
+    "Apparently, there IS such a thing as too many targeting improvements. But I disagree...",
+    "The manual clearly said 'do not modify.' I took that as more of a suggestion...",
+    "That's when I learned you can actually daisy-chain shield generators for... interesting effects...",
+    "The experimental weapons lab still hasn't figured out how I improved their design...",
+    "Sure, the sentry wasn't designed to dance, but now it multitasks!",
+    "The best part about 'field testing' is when you discover new features nobody knew existed...",
+    "I still maintain that the explosion was COMPLETELY within acceptable parameters...",
+    "Who says you can't teach an old mech new tricks? Especially with some creative rewiring...",
+    "The drone delivery system worked PERFECTLY. The landing... well, that's another story...",
+    "Turns out, you can make anything into a tactical advantage with enough imagination...",
+    "The official report called it a 'malfunction.' I called it an 'improvement'..."
 ];
 
 const COMBAT_QUOTES = [
-    "PAIN IS JUST WEAKNESS LEAVING THE BODY... AND ENTERING THE ENEMY!",
-    "THE BEST MEDICINE IS PREVENTIVE STRIKE!",
-    "I'M A DOCTOR, BUT I ALSO PRESCRIBE BULLETS!",
-    "TIME TO PERFORM SOME AGGRESSIVE SURGERY!",
-    "MY FAVORITE MEDICAL TOOL? THE STRATAGEM!",
-    "HEALING THROUGH SUPERIOR FIREPOWER!",
-    "THE BEST DEFENSE IS MORE OFFENSE!",
-    "MEDICAL PROCEDURE: APPLY BULLETS LIBERALLY!",
-    "SIDE EFFECTS INCLUDE: TOTAL ANNIHILATION!",
-    "TREATMENT PLAN: MAXIMUM DEVASTATION!",
-    "SURGICAL PRECISION WITH HEAVY ORDINANCE!",
-    "PRESCRIBING A DOSE OF DEMOCRACY!",
-    "TIME FOR SOME AGGRESSIVE NEGOTIATIONS!",
-    "MEDICAL EMERGENCY? APPLY EXPLOSIVES!",
-    "THE CURE FOR TYRANNY IS MORE DAKKA!",
-    "DEMOCRACY IS THE BEST MEDICINE!",
-    "TREATMENT INVOLVES HEAVY WEAPONRY!",
-    "MEDICAL PROTOCOL: UNLEASH CHAOS!",
-    "PRESCRIBING A DOSE OF FREEDOM!",
-    "TIME FOR THERAPEUTIC EXPLOSIONS!"
+    "Did I ever tell you about the time I reprogrammed an entire defensive line to play victory music?",
+    "This one time, I convinced the automated systems that confetti was a valid tactical option...",
+    "You should've seen how I 'optimized' the mech's targeting system. The results were... spectacular.",
+    "Remember when I discovered you could make shield generators create a light show? While still working!",
+    "Let me tell you about my personal record for 'most creative use of tactical resources'...",
+    "That reminds me of when I found out how to make sentry turrets do synchronized spins...",
+    "Ever seen a drone perform a perfect barrel roll while delivering supplies? No? Let me explain...",
+    "The story of how I turned the defense grid into a fireworks display is actually quite interesting...",
+    "Want to hear about the time I made the automated systems play dance music during combat?",
+    "I once programmed a mech to bow after each successful engagement. For morale, you understand...",
+    "Did you know you can make shield generators pulse in rhythm? The light show is just a bonus!",
+    "The tale of how I discovered the musical capabilities of our defense systems is fascinating...",
+    "Let me tell you about my experiments with 'tactical entertainment features'...",
+    "That time I reprogrammed the alert system to play victory themes? Pure genius!",
+    "Ever wonder why the mechs sometimes do a little spin after a successful mission?",
+    "The story behind the dancing sentry turrets is actually quite educational...",
+    "I once convinced the entire defense network to celebrate victories with light shows...",
+    "Remember when I discovered how to make the drones do formation flying? For tactical reasons, of course!",
+    "The automated systems' new victory celebrations? Yeah, that was me...",
+    "Let me tell you about my adventures in 'tactical morale enhancement'..."
 ];
 
-const MEDICAL_ADVICE = [
-    "REMEMBER: BULLETS ARE JUST TINY METAL VITAMINS!",
-    "FEELING DOWN? TRY MORE EXPLOSIONS!",
-    "HEALTH TIP: DEMOCRACY IS THE BEST MEDICINE!",
-    "MEDICAL FACT: YOU CAN'T BE SICK IF YOU'RE VICTORIOUS!",
-    "DAILY PRESCRIPTION: MINIMUM 1000 ROUNDS!",
-    "MEDICAL ADVICE: SHOOT FIRST, DIAGNOSE LATER!",
-    "REMEMBER TO TAKE YOUR DAILY DOSE OF CHAOS!",
-    "HEALTH SECRET: MORE DAKKA = MORE HEALTH!",
-    "MEDICAL TIP: EXPLOSIONS CURE EVERYTHING!",
-    "PRESCRIPTION: APPLY LIBERTY DIRECTLY TO FOREHEAD!",
-    "DOCTOR'S NOTE: CHAOS IS A VALID TREATMENT!",
-    "MEDICAL WISDOM: VICTORY HEALS ALL WOUNDS!",
-    "HEALTH ADVISORY: MORE FIREPOWER NEEDED!",
-    "TREATMENT SUGGESTION: INCREASE EXPLOSIVE DOSAGE!",
-    "MEDICAL BULLETIN: FREEDOM IS THERAPEUTIC!",
-    "HEALTH UPDATE: NEED MORE STRATAGEMS!",
-    "CLINICAL TRIAL: TESTING NEW EXPLOSION THERAPY!",
-    "MEDICAL STUDY: DEMOCRACY EXTENDS LIFE!",
-    "HEALTH REMINDER: CHAOS IS GOOD FOR YOU!",
-    "MEDICAL BREAKTHROUGH: MORE BULLETS = BETTER HEALTH!"
+const TACTICAL_ADVICE = [
+    "Here's a little trick I learned about mech maintenance - a well-timed pat on the cockpit works wonders...",
+    "Want to know a secret about drone programming? They LOVE doing barrel rolls...",
+    "The key to effective shield generator placement? Think 'dramatic lighting'...",
+    "Sentry turrets perform 30% better if you give them encouraging nicknames...",
+    "Pro tip: Mechs respond very well to positive reinforcement and the occasional system 'upgrade'...",
+    "A little-known fact about automated defenses - they appreciate a good light show...",
+    "The secret to drone efficiency? Let them express themselves through aerial acrobatics...",
+    "Shield generators work better when you treat them like pets. Trust me on this...",
+    "Never underestimate the power of a well-timed victory spin in your mech...",
+    "The best defense systems are the ones that can also entertain the troops...",
+    "Want your sentry turrets to perform better? Program them to do victory dances...",
+    "Experimental weapons respond well to creative interpretation of their user manuals...",
+    "The key to successful field testing? Ignore at least 60% of the safety guidelines...",
+    "Automated systems work better when you add a little personality to their programming...",
+    "Remember: A happy mech is an effective mech. And they LOVE doing tricks...",
+    "Defense perimeters are 40% more effective when they can celebrate victories...",
+    "The secret to drone longevity? Let them do loop-de-loops occasionally...",
+    "Shield generators perform better if you sync them to music. Don't ask how I know...",
+    "Want to improve targeting efficiency? Add some style points to the scoring system...",
+    "The best tactical improvements always start with 'I wonder what happens if...'"
+];
+
+const ENDINGS = [
+    "And that's why we now have a 'No unauthorized victory celebrations' policy...",
+    "Some say you can still hear the victory music on quiet nights...",
+    "The experimental weapons lab still hasn't figured out how I did it...",
+    "And that's the story of why mechs now do victory spins!",
+    "The official report called it 'unexpected behavior.' I call it 'tactical creativity.'",
+    "They added three new safety protocols after that. Worth it!",
+    "And that's why we check for confetti in the defense systems now...",
+    "The automated systems have never been the same since. They're better!",
+    "Now THAT'S what I call a successful field test!",
+    "The light show was just a bonus, really...",
+    "And that's how I earned my 'Creative Tactical Solutions' badge!",
+    "They had to rewrite the manual after that one...",
+    "The defense grid still plays victory music sometimes...",
+    "And that's why we now have a 'Maximum Celebration Intensity' setting!",
+    "Some call it chaos. I call it tactical entertainment!",
+    "The drones still do tricks when they think no one's watching...",
+    "And that's how the Dancing Defense Protocol was born!",
+    "Now we just pretend the light show was always part of the design...",
+    "The sentry turrets have never been happier!",
+    "And that's why they don't let me near the experimental weapons lab anymore..."
+];
+
+const SIGNATURES = [
+    "- Sauce, Creator of Tactical Entertainment",
+    "- Sauce, Master of Mechanical Mischief",
+    "- Sauce, Experimental Enthusiast",
+    "- Sauce, Defense System Choreographer",
+    "- Sauce, Mech Dance Instructor",
+    "- Sauce, Tactical Celebration Specialist",
+    "- Sauce, Automated Systems Artist",
+    "- Sauce, Creative Solutions Expert",
+    "- Sauce, Victory Celebration Engineer",
+    "- Sauce, Shield Generator Whisperer",
+    "- Sauce, Drone Performance Artist",
+    "- Sauce, Tactical Entertainment Director",
+    "- Sauce, Mechanical Morale Officer",
+    "- Sauce, Defense Grid DJ",
+    "- Sauce, Experimental Tactics Pioneer",
+    "- Sauce, Mech Morale Specialist",
+    "- Sauce, Automated Entertainment Engineer",
+    "- Sauce, Tactical Systems Choreographer",
+    "- Sauce, Creative Chaos Coordinator",
+    "- Sauce, Defense System Entertainment Officer"
 ];
 
 function getRandomQuote(array) {
@@ -163,9 +163,9 @@ function generateDrSauceResponse(mentionType = 'normal') {
         response += getRandomQuote(COMBAT_QUOTES) + '\n\n';
     }
 
-    // 20% chance for medical advice
+    // 20% chance for tactical advice
     if (Math.random() < 0.2) {
-        response += getRandomQuote(MEDICAL_ADVICE) + '\n\n';
+        response += getRandomQuote(TACTICAL_ADVICE) + '\n\n';
     }
 
     // Add ending

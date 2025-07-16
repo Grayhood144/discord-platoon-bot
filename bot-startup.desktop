@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Discord Bot Startup
+Exec=lxterminal -e "cd discord-platoon-bot/ && git pull && pm2 start && bash"
+Terminal=true
+X-DesktopFile-StartupNotify=true 

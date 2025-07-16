@@ -64,22 +64,15 @@ client.once('ready', async () => {
 // Function to check and assign roles for a single member
 async function checkAndAssignNewMemberRoles(member) {
   try {
-    // If they have the member role, don't give them new member roles
-    if (member.roles.cache.has(MEMBER_ROLE_ID)) {
+    // Skip bots
+    if (member.user.bot) return;
+
+    // If they have any role other than @everyone, they're not a new member
+    if (member.roles.cache.size > 1) {
       return;
     }
 
-    // Check if member already has any of the new member roles
-    const hasAnyRole = Object.values(NEW_MEMBER_ROLES).some(roleId => 
-      member.roles.cache.has(roleId)
-    );
-
-    // If they already have one of the roles, skip assignment
-    if (hasAnyRole) {
-      return;
-    }
-
-    // If they don't have any of the roles, assign them
+    // If they don't have any roles (except @everyone), assign them new member roles
     for (const [roleName, roleId] of Object.entries(NEW_MEMBER_ROLES)) {
       await member.roles.add(roleId);
       console.log(`✅ Assigned ${roleName} role to ${member.user.username}`);

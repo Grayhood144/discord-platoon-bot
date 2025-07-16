@@ -140,8 +140,8 @@ const DELETE_MESSAGES = [
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.1.2",
-  lastUpdated: "2024-03-19",
+  version: "2.1.3",
+  lastUpdated: "2024-03-20",
   recentChanges: [
     "Fixed reaction roles system with better emoji handling",
     "Updated role IDs to match current server configuration",
@@ -167,9 +167,9 @@ const SUBFACTION_ROLES = {
     name: 'R.E.T.I.C.L.E.',
     id: '1336145271213527140'
   },
-  'CALIBRE': {
-    emoji: '🔫',
-    name: 'C.A.L.I.B.R.E.',
+  'ARMOR': {
+    emoji: '🤖',
+    name: 'A.R.M.O.R.',
     id: '1336145407444783177'
   },
   'DIESEL': {
@@ -1019,13 +1019,14 @@ const commands = async (message, client) => {
       break;
     }
 
-    case '$calibre': {
+    case '$calibre':
+    case '$armor': {
       try {
         const member = message.member;
-        const faction = SUBFACTION_ROLES.CALIBRE;
+        const faction = SUBFACTION_ROLES.ARMOR;
         await assignFactionRole(member, faction, message);
       } catch (error) {
-        console.error('Error assigning CALIBRE role:', error);
+        console.error('Error assigning A.R.M.O.R. role:', error);
         await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
       }
       break;
@@ -1233,24 +1234,29 @@ const commands = async (message, client) => {
         
         processedCount++;
         
-        // Check if member has the Member role
-        if (member.roles.cache.has(REMOVE_ROLES.tra)) { // Changed from MEMBER_ROLE to REMOVE_ROLES.tra
-          let rolesRemoved = false;
-          
-          // Remove the specified roles if they have them
+        // Check for inappropriate role combinations
+        const hasOfficerRole = member.roles.cache.has(OFFICER_ROLE);
+        const hasWarrantRole = member.roles.cache.has(WARRANT_OFFICER_ROLE);
+        const hasEnlistedRole = member.roles.cache.has(ADD_ROLES.enlisted);
+        const hasMemberRole = member.roles.cache.has(ADD_ROLES.member);
+        
+        let rolesRemoved = false;
+        
+        // If they have officer/warrant/enlisted/member roles, they shouldn't have new member roles
+        if (hasOfficerRole || hasWarrantRole || hasEnlistedRole || hasMemberRole) {
           for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
             if (member.roles.cache.has(roleId)) {
               await member.roles.remove(roleId);
               rolesRemoved = true;
             }
           }
-          
-          if (rolesRemoved) {
-            fixedCount++;
-            // Update status message every 10 members fixed
-            if (fixedCount % 10 === 0) {
-              await statusMsg.edit(`🔄 *Adjusting roles...* Fixed ${fixedCount} members so far...`);
-            }
+        }
+        
+        if (rolesRemoved) {
+          fixedCount++;
+          // Update status message every 10 members fixed
+          if (fixedCount % 10 === 0) {
+            await statusMsg.edit(`🔄 *Adjusting roles...* Fixed ${fixedCount} members so far...`);
           }
         }
       }
@@ -1262,16 +1268,10 @@ const commands = async (message, client) => {
       );
       
       // Add to audit log
-      addToAuditLog(`${formatName(message.author, message.guild)} ran the fix command and cleaned up roles for ${fixedCount} members`);
-      
-      // Delete status message after completion
-      setTimeout(() => statusMsg.delete().catch(() => {}), 5000);
-      setTimeout(() => completionMsg.delete().catch(() => {}), 15000);
-
+      addToAuditLog(`${formatName(message.author, message.guild)} ran role cleanup, fixed ${fixedCount} members`);
     } catch (error) {
-      console.error('Fix command error:', error);
-      const errorMsg = await message.channel.send("*Drops medical equipment* Oops! Something went wrong during the operation!");
-      setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+      console.error('Fixed command error:', error);
+      await message.channel.send(`❌ *Drops scalpel* Oops! Something went wrong: ${error.message}`);
     }
     break;
   }
