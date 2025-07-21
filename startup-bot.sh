@@ -3,6 +3,9 @@
 # Change to the bot directory
 cd /home/drsauce/discord-platoon-bot
 
+# Ensure script has correct permissions
+chmod +x startup-bot.sh
+
 # Stop any running PM2 processes
 echo "Stopping any running bot processes..."
 pm2 stop all
