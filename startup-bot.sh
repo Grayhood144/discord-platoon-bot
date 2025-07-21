@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Wait for system to fully initialize
+echo "Waiting for system to initialize..."
+sleep 30
+
 # Change to the bot directory
 cd /home/drsauce/discord-platoon-bot
 
