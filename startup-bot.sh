@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Change to the bot directory
-cd /home/pi/discord-platoon-bot
+cd /home/drsauce/discord-platoon-bot
 
 # Pull latest changes
 git pull

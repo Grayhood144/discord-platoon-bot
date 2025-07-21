@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Discord Bot Startup
-Exec=lxterminal -e "/home/pi/discord-platoon-bot/startup-bot.sh"
+Exec=x-terminal-emulator -e "/home/drsauce/discord-platoon-bot/startup-bot.sh"
 Terminal=true
 X-DesktopFile-StartupNotify=true 
