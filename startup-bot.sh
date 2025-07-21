@@ -27,7 +27,7 @@ sleep 10
 
 # Start the bot with PM2
 echo "Starting bot..."
-pm2 start index.js
+pm2 start index.js --force
 
 # Keep the terminal open without creating a new shell
 read -p "Press Enter to close this window..." 
