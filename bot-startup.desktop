@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Discord Bot Startup
-Exec=bash -c "lxterminal -e '/home/drsauce/discord-platoon-bot/startup-bot.sh' || x-terminal-emulator -e '/home/drsauce/discord-platoon-bot/startup-bot.sh'"
+Exec=bash -c "if command -v lxterminal >/dev/null 2>&1; then lxterminal -e '/home/drsauce/discord-platoon-bot/startup-bot.sh'; else x-terminal-emulator -e '/home/drsauce/discord-platoon-bot/startup-bot.sh'; fi"
 Terminal=true
 X-DesktopFile-StartupNotify=true 
