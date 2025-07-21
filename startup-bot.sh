@@ -8,9 +8,10 @@ echo "Stopping any running bot processes..."
 pm2 stop all
 pm2 delete all
 
-# Pull latest changes
-echo "Pulling latest changes..."
-git pull
+# Force pull latest changes
+echo "Forcing latest changes..."
+git fetch --all
+git reset --hard origin/master
 
 # Wait 10 seconds for any updates to settle
 echo "Waiting 10 seconds for updates..."
