@@ -3,8 +3,9 @@
 # Change to the bot directory
 cd /home/drsauce/discord-platoon-bot
 
-# Ensure script has correct permissions
-chmod +x startup-bot.sh
+# Ensure script and directory have correct permissions
+sudo chown -R drsauce:drsauce .
+sudo chmod +x startup-bot.sh
 
 # Stop any running PM2 processes
 echo "Stopping any running bot processes..."
@@ -13,8 +14,12 @@ pm2 delete all
 
 # Force pull latest changes
 echo "Forcing latest changes..."
-git fetch --all
-git reset --hard origin/master
+sudo git fetch --all
+sudo git reset --hard origin/master
+
+# Ensure new files have correct permissions
+sudo chown -R drsauce:drsauce .
+sudo chmod +x startup-bot.sh
 
 # Wait 10 seconds for any updates to settle
 echo "Waiting 10 seconds for updates..."
