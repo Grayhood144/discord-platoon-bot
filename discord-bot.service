@@ -4,9 +4,9 @@ After=graphical.target
 
 [Service]
 Type=simple
-User=drsauce
+User=root
 Environment=DISPLAY=:0
-ExecStart=/usr/bin/lxterminal -e "/home/drsauce/discord-platoon-bot/startup-bot.sh"
+ExecStart=/usr/bin/lxterminal -e "sudo /home/drsauce/discord-platoon-bot/startup-bot.sh"
 Restart=on-failure
 RestartSec=5
 
