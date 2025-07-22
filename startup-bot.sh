@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Check if script is already running
-if pidof -x $(basename $0) >/dev/null; then
-    echo "Script already running"
-    exit 1
-fi
-
 # Wait for system to fully initialize
 echo "Waiting for system to initialize..."
 sleep 30
