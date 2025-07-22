@@ -1,17 +1,12 @@
 module.exports = {
   apps: [{
-    name: 'discord-platoon-bot',
-    script: 'index.js',
-    instances: 1,
-    autorestart: true,
+    name: "discord-bot",
+    script: "index.js",
     watch: false,
-    max_memory_restart: '1G',
+    autorestart: true,
+    max_restarts: 10,
     env: {
-      NODE_ENV: 'production'
-    },
-    error_file: './logs/err.log',
-    out_file: './logs/out.log',
-    log_file: './logs/combined.log',
-    time: true
+      NODE_ENV: "production"
+    }
   }]
-}; 
+} 
