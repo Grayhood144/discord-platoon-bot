@@ -96,6 +96,48 @@ const VETERANCY_ROLES = {
   '5th Degree': '1323430587410813039'   // 1 month
 };
 
+const AUTO_CLEANUP_INTERVAL = 3600000; // 1 hour in milliseconds
+
+async function automaticRoleCleanup(guild) {
+  try {
+    // Fetch all guild members
+    await guild.members.fetch();
+    const members = guild.members.cache;
+    
+    let fixedCount = 0;
+    
+    // Process each member
+    for (const [memberId, member] of members) {
+      if (member.user.bot) continue; // Skip bots
+      
+      // Check for inappropriate role combinations
+      const hasOfficerRole = member.roles.cache.has(OFFICER_ROLE);
+      const hasWarrantRole = member.roles.cache.has(WARRANT_OFFICER_ROLE);
+      const hasEnlistedRole = member.roles.cache.has(ADD_ROLES.enlisted);
+      const hasMemberRole = member.roles.cache.has(ADD_ROLES.member);
+      
+      // If they have officer/warrant/enlisted/member roles, they shouldn't have new member roles
+      if (hasOfficerRole || hasWarrantRole || hasEnlistedRole || hasMemberRole) {
+        let rolesRemoved = false;
+        for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
+          if (member.roles.cache.has(roleId)) {
+            await member.roles.remove(roleId);
+            rolesRemoved = true;
+          }
+        }
+        if (rolesRemoved) fixedCount++;
+      }
+    }
+
+    if (fixedCount > 0) {
+      console.log(`[Auto Cleanup] Fixed roles for ${fixedCount} members`);
+      addToAuditLog(`Automatic role cleanup fixed ${fixedCount} members`);
+    }
+  } catch (error) {
+    console.error('[Auto Cleanup] Error:', error);
+  }
+}
+
 const WARRANT_OFFICER_ROLE = '1378985570289844314'; // Chief Warrant Officer role ID
 const OFFICER_ROLE = '1305992733835399238'; // - - - - OFC - - - - role ID
 
@@ -430,6 +472,20 @@ async function assignFactionRole(member, faction, message) {
 }
 
 const commands = async (message, client) => {
+  // Start automatic role cleanup when bot processes first message
+  if (!global.cleanupInterval) {
+    global.cleanupInterval = setInterval(() => {
+      if (message.guild) {
+        automaticRoleCleanup(message.guild);
+      }
+    }, AUTO_CLEANUP_INTERVAL);
+    
+    // Run initial cleanup
+    if (message.guild) {
+      automaticRoleCleanup(message.guild);
+    }
+  }
+
   if (
     !message.content.startsWith('$') &&
     !message.content.startsWith('$$') &&
@@ -921,7 +977,19 @@ const commands = async (message, client) => {
           roleList += `• ${change}\n`;
         });
         
-        roleList += '\n**Organization Roles Status:**\n';
+        // Administrative Roles
+        roleList += '\n**Administrative Roles:**\n';
+        getRoleIDs().admin.forEach(roleId => {
+          const role = roles.get(roleId);
+          if (role) {
+            roleList += `✅ ${role.name} (${role.id})\n`;
+          } else {
+            roleList += `❌ Role not found (${roleId})\n`;
+          }
+        });
+
+        // Organization Roles
+        roleList += '\n**Organization Roles:**\n';
         for (const [roleName, roleId] of Object.entries(IMPORTANT_ROLES)) {
           const role = roles.get(roleId);
           if (role) {
@@ -931,7 +999,48 @@ const commands = async (message, client) => {
           }
         }
 
-        await message.channel.send(roleList);
+        // Rank Roles
+        roleList += '\n**Rank Roles:**\n';
+        for (const [rankName, roleId] of Object.entries(RANK_ROLES)) {
+          const role = roles.get(roleId);
+          if (role) {
+            roleList += `✅ ${rankName.toUpperCase()}: ${role.name} (${role.id})\n`;
+          } else {
+            roleList += `❌ ${rankName.toUpperCase()}: Role not found (${roleId})\n`;
+          }
+        }
+
+        // Veterancy Roles
+        roleList += '\n**Veterancy Roles:**\n';
+        for (const [degreeName, roleId] of Object.entries(VETERANCY_ROLES)) {
+          const role = roles.get(roleId);
+          if (role) {
+            roleList += `✅ ${degreeName}: ${role.name} (${role.id})\n`;
+          } else {
+            roleList += `❌ ${degreeName}: Role not found (${roleId})\n`;
+          }
+        }
+
+        // Subfaction Roles
+        roleList += '\n**Subfaction Roles:**\n';
+        for (const [factionName, faction] of Object.entries(SUBFACTION_ROLES)) {
+          const role = roles.get(faction.id);
+          if (role) {
+            roleList += `✅ ${faction.emoji} ${faction.name}: ${role.name} (${role.id})\n`;
+          } else {
+            roleList += `❌ ${faction.emoji} ${faction.name}: Role not found (${faction.id})\n`;
+          }
+        }
+
+        // Send in chunks if needed
+        if (roleList.length > 2000) {
+          const chunks = roleList.match(/.{1,1900}/g);
+          for (const chunk of chunks) {
+            await message.channel.send(chunk);
+          }
+        } else {
+          await message.channel.send(roleList);
+        }
       } catch (error) {
         console.error('Debug roles error:', error);
         const errorMsg = await message.channel.send(`❌ Error listing roles: ${error.message}`);
