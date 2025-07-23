@@ -180,6 +180,68 @@ const DELETE_MESSAGES = [
   "Maximum effort! *trips over medical equipment while messages dramatically vanish*"
 ];
 
+// Add after DELETE_MESSAGES array
+const SAUCE_STORIES = [
+  // Existing stories
+  "Dr. Sauce once tried to perform surgery with a pizza cutter, claiming it was 'innovative medical technology.' The patient was a teddy bear, thankfully.",
+  "Legend has it that Dr. Sauce got his medical license from a cereal box. He still proudly displays it next to his 'World's Okayest Doctor' mug.",
+  "During his last performance review, Dr. Sauce demonstrated his 'revolutionary' healing technique - throwing band-aids at people from across the room. His accuracy was... questionable.",
+  "Dr. Sauce was once found giving a detailed medical lecture to a room full of rubber ducks. He claims they were his most attentive audience yet.",
+  "In an attempt to improve hospital efficiency, Dr. Sauce installed a slip-n-slide in the hallway. The resulting chaos is still mentioned in staff meetings.",
+  "Dr. Sauce's latest research paper was titled 'Why Everything Can Be Fixed With Duct Tape: A Medical Perspective.' It was rejected by every medical journal, surprisingly.",
+  "During a power outage, Dr. Sauce tried to power the medical equipment with a hamster wheel. The hamster quit after day one, citing 'unrealistic work expectations.'",
+  "Dr. Sauce's attempt at organizing medical records involved sorting files by 'vibes' and 'how cool the patient's name sounded.' The administration was not impressed.",
+  "In his spare time, Dr. Sauce practices medicine by playing Operation. He consistently loses to the buzzer but insists it's 'rigged.'",
+  "Dr. Sauce once diagnosed a computer virus as the common cold and prescribed it chicken soup. IT was not amused.",
+  "During a staff meeting, Dr. Sauce presented his new medical theory that laughter is the best medicine by telling dad jokes for two hours straight. Three nurses resigned.",
+  "Dr. Sauce's solution to long waiting times was to install a 'time machine' (just a cardboard box with Christmas lights). Surprisingly, patients did report feeling like time went faster.",
+  "When asked about his qualifications, Dr. Sauce proudly showed off his collection of medical drama DVDs, claiming they were 'basically the same as medical school.'",
+  "Dr. Sauce's attempt at modernizing the hospital involved replacing all the chairs with exercise balls. The resulting chaos lasted exactly 3.5 minutes.",
+  "In his latest medical breakthrough, Dr. Sauce discovered that all his patients felt better after he stopped trying to help them. He calls it 'preventative doctor avoidance.'",
+
+  // New stories
+  "Dr. Sauce's experimental 'music therapy' consisted of him playing kazoo covers of pop songs. The patients recovered quickly, if only to escape the noise.",
+  "After watching a spy movie, Dr. Sauce started writing prescriptions in invisible ink. The pharmacists now keep a UV light and decoder ring at the counter.",
+  "Dr. Sauce once tried to cure writer's cramp by teaching a patient to write with their toes. The resulting handwriting was actually an improvement.",
+  "In an effort to make the waiting room more entertaining, Dr. Sauce installed a ball pit. He now spends most consultations fishing patients out of it.",
+  "Dr. Sauce's attempt at creating a healthy cafeteria menu involved replacing all food with different flavored jello. The jello rebellion of 2023 is now hospital legend.",
+  "During a slow day, Dr. Sauce tried to teach the MRI machine to sing. The resulting sounds were mistaken for a new form of diagnostic warning.",
+  "Dr. Sauce's solution to running out of hand sanitizer was to install tiny water guns filled with soap at every doorway. The janitors are still finding soap in the ceiling.",
+  "After binge-watching ninja movies, Dr. Sauce started delivering test results via paper airplane. His accuracy has improved to a solid 23%.",
+  "Dr. Sauce once convinced the entire pediatric ward that medicine tastes bad because the germs are actually tiny dragons that only like spicy food.",
+  "In an attempt to make hospital gowns more fashionable, Dr. Sauce added sequins and LED lights. The resulting power surge took out three floors.",
+  "Dr. Sauce's idea of improving patient mobility involved installing a zipline between departments. The insurance company had some questions.",
+  "During a particularly boring shift, Dr. Sauce reorganized the pharmacy alphabetically by how difficult the medications were to pronounce.",
+  "Dr. Sauce's solution to hospital parking problems was to introduce a valet service using only unicycles. It went exactly as well as you'd expect.",
+  "After watching too many superhero movies, Dr. Sauce started wearing a cape to surgeries. It got caught in an automatic door seven times in one day.",
+  "Dr. Sauce's attempt at creating a new patient tracking system involved giving everyone party horns to honk when they needed assistance.",
+  "In the name of efficiency, Dr. Sauce tried to teach the hospital's therapy dogs to take blood pressure readings. They were great at comfort, terrible at mathematics.",
+  "Dr. Sauce once replaced all the water coolers with chocolate milk fountains, claiming it was 'for calcium deficiency prevention.'",
+  "During a heatwave, Dr. Sauce converted the hospital lobby into a makeshift beach, complete with inflatable palm trees and a kiddie pool filled with ice cubes.",
+  "Dr. Sauce's interpretation of 'paperless office' was to communicate exclusively through interpretive dance. The resulting chaos lasted three memorable hours.",
+  "After watching a cooking show, Dr. Sauce started presenting medical diagnoses as if he was judging a cooking competition. 'Your blood pressure is... elevated!'",
+  "Dr. Sauce's solution to noisy hospital corridors was to require everyone to move by either tiptoeing or moonwalking. The resulting dance-offs were legendary.",
+  "In an attempt to make X-rays more fun, Dr. Sauce added googly eyes to all the machines. Patients reported feeling judged by their own skeletons.",
+  "Dr. Sauce once tried to implement a 'bring your pet to work day.' It ended when someone brought in their pet giraffe.",
+  "To improve hospital navigation, Dr. Sauce created a treasure map system with riddles. Three patients and two doctors are still trying to find the cafeteria.",
+  "Dr. Sauce's attempt at creating a hospital radio station consisted entirely of him making beeping noises and humming the theme from M*A*S*H.",
+  "During a slow night shift, Dr. Sauce taught himself ventriloquism to make the mannequins in the training room tell dad jokes.",
+  "Dr. Sauce once replaced all the elevator music with his own beatbox versions of classical music. Mozart has never sounded quite the same.",
+  "In an effort to reduce stress, Dr. Sauce installed a 'compliment cannon' that would shoot out nice messages. The paper cuts were an unforeseen complication.",
+  "Dr. Sauce's solution to long meetings was to require everyone to speak in rhymes. The quarterly budget review became surprisingly entertaining.",
+  "After watching a documentary about penguins, Dr. Sauce insisted on sliding down hallways on his belly to 'conserve energy.' The wax budget tripled.",
+  "Dr. Sauce once attempted to create a hospital-wide game of musical chairs during shift changes. The resulting chaos is now part of the employee orientation video.",
+  "In the spirit of recycling, Dr. Sauce started using old x-rays as mood lighting in the break room. The gothic atmosphere did wonders for coffee breaks.",
+  "Dr. Sauce's attempt at creating a hospital mascot involved him dressing up as 'Captain Bandaid,' complete with a utility belt full of lollipops.",
+  "During a particularly creative moment, Dr. Sauce replaced all the 'Exit' signs with 'Plot Twist' signs. The fire marshal was not impressed.",
+  "Dr. Sauce once tried to implement a hospital-wide game of Marco Polo to help people find their way around. Three departments are still playing."
+];
+
+// Function to get a random Sauce story
+function getRandomSauceStory() {
+  return SAUCE_STORIES[Math.floor(Math.random() * SAUCE_STORIES.length)];
+}
+
 // Bot version and changelog
 const BOT_VERSION = {
   version: "2.1.3",
@@ -435,7 +497,7 @@ async function assignFactionRole(member, faction, message) {
 
   // Check if they already have this role
   if (member.roles.cache.has(faction.id)) {
-    await message.channel.send(`*Checks clipboard* You're already in ${faction.name}! No changes needed. 🏥`);
+    await message.channel.send(`${getRandomSauceStory()}\n\nOh right, about your request - you're already in ${faction.name}! No changes needed. 🏥`);
     return;
   }
 
@@ -457,7 +519,7 @@ async function assignFactionRole(member, faction, message) {
   }
 
   // Send success message
-  let successMessage = `*Adjusts stethoscope* You've been assigned to ${faction.name}! 🎉`;
+  let successMessage = `${getRandomSauceStory()}\n\nAnyway, you've been assigned to ${faction.name}! 🎉`;
   if (removedRoles.length > 0) {
     successMessage += `\n*Note: Removed from ${removedRoles.join(', ')}*`;
   }
@@ -1052,8 +1114,8 @@ const commands = async (message, client) => {
     case '$eval': {
       // Check if the user is a warrant officer or - - - - OFC - - - -
       if (!hasRole(author, [WARRANT_OFFICER_ROLE, OFFICER_ROLE])) {
-        const errorMsg = await message.channel.send('❌ You do not have permission to use this command. Only Warrant Officers and - - - - OFC - - - - can use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        const errorMsg = await message.channel.send(`❌ ${getRandomSauceStory()}\n\nOh, and by the way, you can't use this command. Only Warrant Officers and - - - - OFC - - - - can do that.`);
+        setTimeout(() => errorMsg.delete().catch(() => {}), 15000);
         break;
       }
 
@@ -1283,8 +1345,8 @@ const commands = async (message, client) => {
                            message.author.id === '603550636545540096';
       
                 if (!hasPermission) {
-        const errorMsg = await message.channel.send("Whoa there, wannabe doctor! *adjusts imaginary glasses* I'm afraid your medical license is about as real as mine!");
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nAnd that's why I'm not allowed to delete messages without proper clearance anymore!");
+        setTimeout(() => errorMsg.delete().catch(() => {}), 15000);
         return;
       }
 
@@ -1322,8 +1384,8 @@ const commands = async (message, client) => {
   case '$fixed': {
     // Check if user is Sauce
     if (authorID !== '603550636545540096') {
-      const errorMsg = await message.channel.send("*Adjusts lab coat* Sorry, but only the real Dr. Sauce can run this fix!");
-      setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+      const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nSpeaking of which, only the real Dr. Sauce can run this fix!");
+      setTimeout(() => errorMsg.delete().catch(() => {}), 15000);
       break;
     }
 
