@@ -115,9 +115,10 @@ async function automaticRoleCleanup(guild) {
       const hasWarrantRole = member.roles.cache.has(WARRANT_OFFICER_ROLE);
       const hasEnlistedRole = member.roles.cache.has(ADD_ROLES.enlisted);
       const hasMemberRole = member.roles.cache.has(ADD_ROLES.member);
+      const hasAmbassadorRole = member.roles.cache.has(AMBASSADOR_ROLE);
       
-      // If they have officer/warrant/enlisted/member roles, they shouldn't have new member roles
-      if (hasOfficerRole || hasWarrantRole || hasEnlistedRole || hasMemberRole) {
+      // If they have officer/warrant/enlisted/member/ambassador roles, they shouldn't have new member roles
+      if (hasOfficerRole || hasWarrantRole || hasEnlistedRole || hasMemberRole || hasAmbassadorRole) {
         let rolesRemoved = false;
         for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
           if (member.roles.cache.has(roleId)) {
@@ -140,6 +141,7 @@ async function automaticRoleCleanup(guild) {
 
 const WARRANT_OFFICER_ROLE = '1378985570289844314'; // Chief Warrant Officer role ID
 const OFFICER_ROLE = '1305992733835399238'; // - - - - OFC - - - - role ID
+const AMBASSADOR_ROLE = '1322117528297934949'; // Ambassador to the Khanate role ID
 
 // Role IDs for ranks
 const RANK_ROLES = {
@@ -585,7 +587,8 @@ const commands = async (message, client) => {
         `**General Commands**\n` +
         `• \`deploy\` — Shows the full subsection layout.\n` +
         `• \`$sync\` — Updates all members in each subsection based on Discord roles.\n` +
-        `• \`$help\` — Displays this help message.\n\n` +
+        `• \`$help\` — Displays this help message.\n` +
+        `• \`$version\` — Shows current bot version and recent updates.\n\n` +
         
         `**Veterancy Commands**\n` +
         `• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n` +
@@ -1021,6 +1024,44 @@ const commands = async (message, client) => {
       break;
     }
 
+    case '$version': {
+      try {
+        const versionEmbed = {
+          color: 0x1E90FF,
+          title: '🤖 Dr. Sauce Bot Version Info',
+          fields: [
+            {
+              name: 'Current Version',
+              value: `v${BOT_VERSION.version}`,
+              inline: true
+            },
+            {
+              name: 'Last Updated',
+              value: BOT_VERSION.lastUpdated,
+              inline: true
+            },
+            {
+              name: 'Recent Updates',
+              value: BOT_VERSION.recentChanges.slice(0, 5).map(change => `• ${change}`).join('\n')
+            }
+          ],
+          footer: {
+            text: 'Use $help to see all available commands'
+          }
+        };
+
+        const versionMsg = await message.channel.send({ embeds: [versionEmbed] });
+        setTimeout(() => versionMsg.delete().catch(() => {}), 30000);
+        // Delete the original command
+        await message.delete().catch(() => {});
+      } catch (error) {
+        console.error('Version command error:', error);
+        const errorMsg = await message.channel.send('❌ Error displaying version info.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      }
+      break;
+    }
+
     case '$debugroles': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
@@ -1050,14 +1091,46 @@ const commands = async (message, client) => {
           }
         });
 
-        // Organization Roles
-        roleList += '\n**Organization Roles:**\n';
-        for (const [roleName, roleId] of Object.entries(IMPORTANT_ROLES)) {
+        // Special Roles
+        roleList += '\n**Special Roles:**\n';
+        const specialRoles = {
+          'Ambassador to the Khanate': AMBASSADOR_ROLE,
+          'Organization': ORGANIZATION_ROLE,
+          'Junior Officer': JUNIOR_OFFICER_ROLE,
+          'Warrant Officer': WARRANT_OFFICER_ROLE,
+          'Officer': OFFICER_ROLE,
+          'Platoon Leader': getRoleIDs().platoonLeader,
+          'Platoon Instructor': getRoleIDs().platoonInstructor
+        };
+
+        for (const [roleName, roleId] of Object.entries(specialRoles)) {
           const role = roles.get(roleId);
           if (role) {
             roleList += `✅ ${roleName}: ${role.name} (${role.id})\n`;
           } else {
             roleList += `❌ ${roleName}: Role not found (${roleId})\n`;
+          }
+        }
+
+        // New Member Roles (roles that get removed)
+        roleList += '\n**New Member Roles:**\n';
+        for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
+          const role = roles.get(roleId);
+          if (role) {
+            roleList += `✅ ${roleName.toUpperCase()}: ${role.name} (${role.id})\n`;
+          } else {
+            roleList += `❌ ${roleName.toUpperCase()}: Role not found (${roleId})\n`;
+          }
+        }
+
+        // Additional Roles (roles that get added)
+        roleList += '\n**Additional Roles:**\n';
+        for (const [roleName, roleId] of Object.entries(ADD_ROLES)) {
+          const role = roles.get(roleId);
+          if (role) {
+            roleList += `✅ ${roleName.toUpperCase()}: ${role.name} (${role.id})\n`;
+          } else {
+            roleList += `❌ ${roleName.toUpperCase()}: Role not found (${roleId})\n`;
           }
         }
 
@@ -1097,12 +1170,22 @@ const commands = async (message, client) => {
         // Send in chunks if needed
         if (roleList.length > 2000) {
           const chunks = roleList.match(/.{1,1900}/g);
+          let chunkMessages = [];
           for (const chunk of chunks) {
-            await message.channel.send(chunk);
+            const msg = await message.channel.send(chunk);
+            chunkMessages.push(msg);
           }
+          // Delete chunks after 30 seconds
+          setTimeout(() => {
+            chunkMessages.forEach(msg => msg.delete().catch(() => {}));
+          }, 30000);
         } else {
-          await message.channel.send(roleList);
+          const msg = await message.channel.send(roleList);
+          setTimeout(() => msg.delete().catch(() => {}), 30000);
         }
+
+        // Delete the original command
+        await message.delete().catch(() => {});
       } catch (error) {
         console.error('Debug roles error:', error);
         const errorMsg = await message.channel.send(`❌ Error listing roles: ${error.message}`);
@@ -1178,87 +1261,24 @@ const commands = async (message, client) => {
       break;
     }
 
-    case '$reticle': {
-      try {
-        const member = message.member;
-        const faction = SUBFACTION_ROLES.RETICLE;
-        await assignFactionRole(member, faction, message);
-      } catch (error) {
-        console.error('Error assigning RETICLE role:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-      }
-      break;
-    }
-
+    case '$reticle': 
     case '$calibre':
-    case '$armor': {
-      try {
-        const member = message.member;
-        const faction = SUBFACTION_ROLES.ARMOR;
-        await assignFactionRole(member, faction, message);
-      } catch (error) {
-        console.error('Error assigning A.R.M.O.R. role:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-      }
-      break;
-    }
-
-    case '$diesel': {
-      try {
-        const member = message.member;
-        const faction = SUBFACTION_ROLES.DIESEL;
-        await assignFactionRole(member, faction, message);
-      } catch (error) {
-        console.error('Error assigning DIESEL role:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-      }
-      break;
-    }
-
-    case '$stalker': {
-      try {
-        const member = message.member;
-        const faction = SUBFACTION_ROLES.STALKER;
-        await assignFactionRole(member, faction, message);
-      } catch (error) {
-        console.error('Error assigning STALKER role:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-      }
-      break;
-    }
-
-    case '$meth': {
-      try {
-        const member = message.member;
-        const faction = SUBFACTION_ROLES.METH;
-        await assignFactionRole(member, faction, message);
-      } catch (error) {
-        console.error('Error assigning METH role:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-      }
-      break;
-    }
-
-    case '$geneva': {
-      try {
-        const member = message.member;
-        const faction = SUBFACTION_ROLES.GENEVA;
-        await assignFactionRole(member, faction, message);
-      } catch (error) {
-        console.error('Error assigning GENEVA role:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-      }
-      break;
-    }
-
+    case '$armor':
+    case '$diesel':
+    case '$stalker':
+    case '$meth':
+    case '$geneva':
     case '$static': {
       try {
         const member = message.member;
-        const faction = SUBFACTION_ROLES.STATIC;
+        const faction = SUBFACTION_ROLES[cmd.substring(1).toUpperCase()];
         await assignFactionRole(member, faction, message);
+        // Delete the original command message
+        await message.delete().catch(() => {});
       } catch (error) {
-        console.error('Error assigning STATIC role:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+        console.error(`Error assigning ${cmd} role:`, error);
+        const errorMsg = await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
       }
       break;
     }
@@ -1270,10 +1290,14 @@ const commands = async (message, client) => {
           helpText += `\`$${faction.name.toLowerCase().replace(/\./g, '')}\` - Join ${faction.name}\n`;
         });
         helpText += '\n*Note: You can only be in one faction at a time.*';
-        await message.channel.send(helpText);
+        const helpMsg = await message.channel.send(helpText);
+        setTimeout(() => helpMsg.delete().catch(() => {}), 30000);
+        // Delete the original command message
+        await message.delete().catch(() => {});
       } catch (error) {
         console.error('Error showing faction help:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+        const errorMsg = await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
       }
       break;
     }
@@ -1313,10 +1337,14 @@ const commands = async (message, client) => {
           }
         };
 
-        await message.channel.send({ embeds: [infoEmbed] });
+        const infoMsg = await message.channel.send({ embeds: [infoEmbed] });
+        setTimeout(() => infoMsg.delete().catch(() => {}), 60000);
+        // Delete the original command message
+        await message.delete().catch(() => {});
       } catch (error) {
         console.error('Error showing role info:', error);
-        await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+        const errorMsg = await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
       }
       break;
     }
@@ -1385,7 +1413,7 @@ const commands = async (message, client) => {
     // Check if user is Sauce
     if (authorID !== '603550636545540096') {
       const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nSpeaking of which, only the real Dr. Sauce can run this fix!");
-      setTimeout(() => errorMsg.delete().catch(() => {}), 15000);
+      setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
       break;
     }
 
@@ -1398,6 +1426,7 @@ const commands = async (message, client) => {
       
       let fixedCount = 0;
       let processedCount = 0;
+      let orgRoleAdded = 0;
       
       // Process each member
       for (const [memberId, member] of members) {
@@ -1410,17 +1439,33 @@ const commands = async (message, client) => {
         const hasWarrantRole = member.roles.cache.has(WARRANT_OFFICER_ROLE);
         const hasEnlistedRole = member.roles.cache.has(ADD_ROLES.enlisted);
         const hasMemberRole = member.roles.cache.has(ADD_ROLES.member);
+        const hasAmbassadorRole = member.roles.cache.has(AMBASSADOR_ROLE);
         
         let rolesRemoved = false;
         
-        // If they have officer/warrant/enlisted/member roles, they shouldn't have new member roles
-        if (hasOfficerRole || hasWarrantRole || hasEnlistedRole || hasMemberRole) {
+        // If they have officer/warrant/enlisted/member/ambassador roles, they shouldn't have new member roles
+        if (hasOfficerRole || hasWarrantRole || hasEnlistedRole || hasMemberRole || hasAmbassadorRole) {
           for (const [roleName, roleId] of Object.entries(REMOVE_ROLES)) {
             if (member.roles.cache.has(roleId)) {
               await member.roles.remove(roleId);
               rolesRemoved = true;
             }
           }
+        }
+
+        // Check if member has any subsection role and needs the organization role
+        let hasSubsectionRole = false;
+        for (const faction of Object.values(SUBFACTION_ROLES)) {
+          if (member.roles.cache.has(faction.id)) {
+            hasSubsectionRole = true;
+            break;
+          }
+        }
+
+        // Add organization role if they have a subsection role but not the org role
+        if (hasSubsectionRole && !member.roles.cache.has(ORGANIZATION_ROLE)) {
+          await member.roles.add(ORGANIZATION_ROLE);
+          orgRoleAdded++;
         }
         
         if (rolesRemoved) {
@@ -1432,17 +1477,24 @@ const commands = async (message, client) => {
         }
       }
 
-      // Send completion message
+      // Delete the status message
+      await statusMsg.delete().catch(() => {});
+
+      // Send completion message and delete after delay
       const completionMsg = await message.channel.send(
-        `✅ *Removes gloves* Operation complete! I've processed ${processedCount} members and fixed ${fixedCount} of them.\n` +
+        `✅ *Removes gloves* Operation complete! I've processed ${processedCount} members:\n` +
+        `• Fixed ${fixedCount} members with incorrect roles\n` +
+        `• Added Organization role to ${orgRoleAdded} members with subsection roles\n` +
         `*Note: Removed Cadet, TRA, and Trainee roles from members who shouldn't have them.*`
       );
+      setTimeout(() => completionMsg.delete().catch(() => {}), 10000);
       
       // Add to audit log
-      addToAuditLog(`${formatName(message.author, message.guild)} ran role cleanup, fixed ${fixedCount} members`);
+      addToAuditLog(`${formatName(message.author, message.guild)} ran role cleanup, fixed ${fixedCount} members, added org role to ${orgRoleAdded} members`);
     } catch (error) {
       console.error('Fixed command error:', error);
-      await message.channel.send(`❌ *Drops scalpel* Oops! Something went wrong: ${error.message}`);
+      const errorMsg = await message.channel.send(`❌ *Drops scalpel* Oops! Something went wrong: ${error.message}`);
+      setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
     }
     break;
   }
