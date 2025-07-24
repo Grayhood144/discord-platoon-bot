@@ -133,6 +133,9 @@ node_modules
 config.json
 token.txt
 bot-config.json
+deployMessages.json
+subsections.json
+userRoles.json
 
 # Backup files
 *.backup
