@@ -4,6 +4,15 @@ module.exports = async function cleanMessage(message, client) {
   if (!message || message.author?.bot) return;
   const content = message.content;
 
+  // Skip deletion for messages that are discussing subsections or bot functionality
+  if (content.toLowerCase().includes('subsection') && 
+      (content.toLowerCase().includes('level 50') || 
+       content.toLowerCase().includes('m.e.t.h.') || 
+       content.toLowerCase().includes('medic') ||
+       content.toLowerCase().includes('playstyle'))) {
+    return;
+  }
+
   // Auto-delete password-containing messages
   if (content.includes('2430114')) {
     return setTimeout(() => {
@@ -72,15 +81,15 @@ module.exports = async function cleanMessage(message, client) {
     // Veterancy messages
     'Veterancy Check Results', 'Veterancy Assignment Complete',
     
-    // Faction messages
-    'You\'ve been assigned to', 'You\'re already in',
-    
     // Debug messages
     'Bot Version Info', 'Recent Changes', 'Organization Roles Status'
   ];
 
+  // Only delete messages that are EXACTLY command responses or status messages
+  // This prevents deleting messages that happen to contain these phrases in a discussion
   for (const trigger of quickDeleteTriggers) {
-    if (content.includes(trigger)) {
+    if (content === trigger || 
+        (content.includes(trigger) && content.length < trigger.length + 50)) {
       return setTimeout(() => {
         if (message.deletable) message.delete().catch(() => {});
       }, 10000);

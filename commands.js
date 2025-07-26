@@ -246,16 +246,16 @@ function getRandomSauceStory() {
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.1.3",
-  lastUpdated: "2024-03-20",
+  version: "2.1.4",
+  lastUpdated: "2024-03-21",
   recentChanges: [
+    "Updated message cleaner to preserve subsection discussions",
+    "Reordered subfactions to match platoon numbering",
     "Fixed reaction roles system with better emoji handling",
     "Updated role IDs to match current server configuration",
     "Added hourly Disboard bump reminder",
     "Simplified $debugroles to show only important roles",
-    "Added Dr. Sauce character responses",
-    "Added automatic role assignment for new members",
-    "Added secret Leo easter egg"
+    "Added Dr. Sauce character responses"
   ]
 };
 
@@ -268,6 +268,26 @@ const IMPORTANT_ROLES = {
 
 // Subfaction roles
 const SUBFACTION_ROLES = {
+  'METH': {
+    emoji: '💊',
+    name: 'M.E.T.H.',
+    id: '1336145646779891732'
+  },
+  'STALKER': {
+    emoji: '👁️',
+    name: 'S.T.A.L.K.E.R.',
+    id: '1336145558917615637'
+  },
+  'DIESEL': {
+    emoji: '🛢️',
+    name: 'D.I.E.S.E.L.',
+    id: '1336145474721419345'
+  },
+  'STATIC': {
+    emoji: '⚡',
+    name: 'S.T.A.T.I.C.',
+    id: '1383685207311384616'
+  },
   'RETICLE': {
     emoji: '🎯',
     name: 'R.E.T.I.C.L.E.',
@@ -278,30 +298,10 @@ const SUBFACTION_ROLES = {
     name: 'A.R.M.O.R.',
     id: '1336145407444783177'
   },
-  'DIESEL': {
-    emoji: '🛢️',
-    name: 'D.I.E.S.E.L.',
-    id: '1336145474721419345'
-  },
-  'STALKER': {
-    emoji: '👁️',
-    name: 'S.T.A.L.K.E.R.',
-    id: '1336145558917615637'
-  },
-  'METH': {
-    emoji: '💊',
-    name: 'M.E.T.H.',
-    id: '1336145646779891732'
-  },
   'GENEVA': {
     emoji: '🏥',
     name: 'G.E.N.E.V.A.',
     id: '1336145717978468352'
-  },
-  'STATIC': {
-    emoji: '⚡',
-    name: 'S.T.A.T.I.C.',
-    id: '1383685207311384616'
   }
 };
 
@@ -843,15 +843,23 @@ const commands = async (message, client) => {
       }
 
       try {
-      const msgs = await message.channel.messages.fetch({ limit: 100 });
-        const toDelete = msgs.filter(msg => 
-          msg.author.id === client.user.id ||
-          msg.content.includes('2430114') ||
-          msg.content.startsWith('$') ||
-          msg.content.startsWith('$$') ||
-          msg.content.startsWith('SauceTest') ||
-          msg.content.startsWith('deploy')
-        );
+        const msgs = await message.channel.messages.fetch({ limit: 100 });
+        const toDelete = msgs.filter(msg => {
+          // Skip messages that are discussing subsections or bot functionality
+          if (msg.content.toLowerCase().includes('subsection') && 
+              (msg.content.toLowerCase().includes('level 50') || 
+               msg.content.toLowerCase().includes('m.e.t.h.') || 
+               msg.content.toLowerCase().includes('medic'))) {
+            return false;
+          }
+          
+          return msg.author.id === client.user.id ||
+                 msg.content.includes('2430114') ||
+                 msg.content.startsWith('$') ||
+                 msg.content.startsWith('$$') ||
+                 msg.content.startsWith('SauceTest') ||
+                 msg.content.startsWith('deploy');
+        });
 
         if (toDelete.size > 0) {
           await message.channel.bulkDelete(toDelete);
@@ -1372,7 +1380,7 @@ const commands = async (message, client) => {
       const hasPermission = message.member.roles.cache.has(JUNIOR_OFFICER_ROLE) || 
                            message.author.id === '603550636545540096';
       
-                if (!hasPermission) {
+      if (!hasPermission) {
         const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nAnd that's why I'm not allowed to delete messages without proper clearance anymore!");
         setTimeout(() => errorMsg.delete().catch(() => {}), 15000);
         return;
@@ -1387,27 +1395,38 @@ const commands = async (message, client) => {
         return;
       }
 
-    try {
-      // Delete command message first
-      await message.delete();
+      try {
+        // Delete command message first
+        await message.delete();
 
-      // Then bulk delete the specified amount
-      const messages = await message.channel.messages.fetch({ limit: amount });
-      await message.channel.bulkDelete(messages);
+        // Then bulk delete the specified amount, excluding important discussions
+        const messages = await message.channel.messages.fetch({ limit: amount });
+        const filteredMessages = messages.filter(msg => {
+          // Skip messages that are discussing subsections or bot functionality
+          if (msg.content.toLowerCase().includes('subsection') && 
+              (msg.content.toLowerCase().includes('level 50') || 
+               msg.content.toLowerCase().includes('m.e.t.h.') || 
+               msg.content.toLowerCase().includes('medic'))) {
+            return false;
+          }
+          return true;
+        });
 
-      // Send success message with random funny quote
-      const successMsg = await message.channel.send(DELETE_MESSAGES[Math.floor(Math.random() * DELETE_MESSAGES.length)]);
-      setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+        await message.channel.bulkDelete(filteredMessages);
 
-      // Add to audit log
-      addToAuditLog(`${formatName(message.author, message.guild)} deleted ${amount} messages in ${message.channel.name}`);
-    } catch (error) {
-      console.error('Delete error:', error);
-      const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
-      setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        // Send success message with random funny quote
+        const successMsg = await message.channel.send(DELETE_MESSAGES[Math.floor(Math.random() * DELETE_MESSAGES.length)]);
+        setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+
+        // Add to audit log
+        addToAuditLog(`${formatName(message.author, message.guild)} deleted ${filteredMessages.size} messages in ${message.channel.name}`);
+      } catch (error) {
+        console.error('Delete error:', error);
+        const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+      }
+      break;
     }
-    break;
-  }
 
   case '$fixed': {
     // Check if user is Sauce
