@@ -246,16 +246,16 @@ function getRandomSauceStory() {
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.1.4",
+  version: "2.1.5",
   lastUpdated: "2024-03-21",
   recentChanges: [
+    "Fixed subfaction order to put S.T.A.L.K.E.R. in correct position",
     "Updated message cleaner to preserve subsection discussions",
     "Reordered subfactions to match platoon numbering",
     "Fixed reaction roles system with better emoji handling",
     "Updated role IDs to match current server configuration",
     "Added hourly Disboard bump reminder",
-    "Simplified $debugroles to show only important roles",
-    "Added Dr. Sauce character responses"
+    "Simplified $debugroles to show only important roles"
   ]
 };
 
@@ -273,10 +273,10 @@ const SUBFACTION_ROLES = {
     name: 'M.E.T.H.',
     id: '1336145646779891732'
   },
-  'STALKER': {
-    emoji: '👁️',
-    name: 'S.T.A.L.K.E.R.',
-    id: '1336145558917615637'
+  'ARMOR': {
+    emoji: '🤖',
+    name: 'A.R.M.O.R.',
+    id: '1336145407444783177'
   },
   'DIESEL': {
     emoji: '🛢️',
@@ -293,10 +293,10 @@ const SUBFACTION_ROLES = {
     name: 'R.E.T.I.C.L.E.',
     id: '1336145271213527140'
   },
-  'ARMOR': {
-    emoji: '🤖',
-    name: 'A.R.M.O.R.',
-    id: '1336145407444783177'
+  'STALKER': {
+    emoji: '👁️',
+    name: 'S.T.A.L.K.E.R.',
+    id: '1336145558917615637'
   },
   'GENEVA': {
     emoji: '🏥',
