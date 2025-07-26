@@ -269,37 +269,30 @@ const IMPORTANT_ROLES = {
 // Subfaction roles
 const SUBFACTION_ROLES = {
   'METH': {
-    emoji: '💊',
     name: 'M.E.T.H.',
     id: '1336145646779891732'
   },
   'ARMOR': {
-    emoji: '🤖',
     name: 'A.R.M.O.R.',
     id: '1336145407444783177'
   },
   'DIESEL': {
-    emoji: '🛢️',
     name: 'D.I.E.S.E.L.',
     id: '1336145474721419345'
   },
   'STATIC': {
-    emoji: '⚡',
     name: 'S.T.A.T.I.C.',
     id: '1383685207311384616'
   },
   'RETICLE': {
-    emoji: '🎯',
     name: 'R.E.T.I.C.L.E.',
     id: '1336145271213527140'
   },
   'STALKER': {
-    emoji: '👁️',
     name: 'S.T.A.L.K.E.R.',
     id: '1336145558917615637'
   },
   'GENEVA': {
-    emoji: '🏥',
     name: 'G.E.N.E.V.A.',
     id: '1336145717978468352'
   }
