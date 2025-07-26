@@ -246,16 +246,16 @@ function getRandomSauceStory() {
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.1.5",
+  version: "2.1.6",
   lastUpdated: "2024-03-21",
   recentChanges: [
+    "Added Joe/Biden easter egg response",
     "Fixed subfaction order to put S.T.A.L.K.E.R. in correct position",
     "Updated message cleaner to preserve subsection discussions",
     "Reordered subfactions to match platoon numbering",
     "Fixed reaction roles system with better emoji handling",
     "Updated role IDs to match current server configuration",
-    "Added hourly Disboard bump reminder",
-    "Simplified $debugroles to show only important roles"
+    "Added hourly Disboard bump reminder"
   ]
 };
 
@@ -548,6 +548,13 @@ const commands = async (message, client) => {
     if (message.guild) {
       automaticRoleCleanup(message.guild);
     }
+  }
+
+  // Check for Joe/Biden mentions with 3% chance
+  const content = message.content.toLowerCase();
+  if ((content.includes('joe') || content.includes('biden')) && Math.random() < 0.03) {
+    await message.channel.send('AIIIIIIIIIIRRRRRRRRRRRRRRRPPPPPPPPPORRRRRRRRRRTTTTTTTTSSSSSSSSSS');
+    return;
   }
 
   if (
