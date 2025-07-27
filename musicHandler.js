@@ -11,9 +11,15 @@ const play = require('play-dl');
 const ytdl = require('ytdl-core');
 const path = require('path');
 
-// Configure FFmpeg path
-const ffmpegPath = path.join(__dirname, 'ffmpeg', 'ffmpeg.exe');
-play.FFmpegPath = ffmpegPath;
+// Configure FFmpeg path based on platform
+if (process.platform === 'win32') {
+  // Windows: use local FFmpeg
+  const ffmpegPath = path.join(__dirname, 'ffmpeg', 'ffmpeg.exe');
+  play.FFmpegPath = ffmpegPath;
+} else {
+  // Linux: use system FFmpeg
+  play.FFmpegPath = '/usr/bin/ffmpeg';
+}
 
 // Store queues for each server
 const queues = new Map();
