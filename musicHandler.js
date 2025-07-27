@@ -11,17 +11,28 @@ const play = require('play-dl');
 const path = require('path');
 const SpotifyWebApi = require('spotify-web-api-node');
 
+// Add logging function
+function log(message, data = null) {
+  const logMessage = `[Music] ${message}`;
+  if (data) {
+    console.log(logMessage, JSON.stringify(data, null, 2));
+  } else {
+    console.log(logMessage);
+  }
+}
+
 // Initialize play-dl
 (async () => {
   try {
+    log('Initializing play-dl...');
     await play.setToken({
       youtube: {
         cookie: process.env.YOUTUBE_COOKIE || ''
       }
     });
-    console.log('✅ play-dl initialized successfully');
+    log('✅ play-dl initialized successfully');
   } catch (error) {
-    console.error('Error initializing play-dl:', error);
+    log('❌ Error initializing play-dl:', error);
   }
 })();
 
@@ -222,27 +233,25 @@ function formatDuration(seconds) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-// Function to validate YouTube URL
-async function validateAndGetVideoInfo(url) {
+// Function to validate YouTube URL or search term
+async function validateAndGetVideoInfo(input) {
   try {
-    // Check if it's a valid YouTube URL
-    const urlType = await play.validate(url);
-    console.log('URL type:', urlType);
+    log('Starting video validation for input:', input);
+    
+    // Check if it's a URL
+    if (input.startsWith('http')) {
+      log('Input appears to be a URL, validating...');
+      const urlType = await play.validate(input);
+      log('URL validation result:', urlType);
 
-    if (urlType === 'yt_video') {
-      const info = await play.video_info(url);
-      return {
-        title: info.video_details.title,
-        url: info.video_details.url,
-        duration: info.video_details.durationInSec,
-        thumbnail: info.video_details.thumbnails[0].url
-      };
-    } else {
-      // Try to search for it
-      console.log('Searching for:', url);
-      const searchResults = await play.search(url, { limit: 1 });
-      if (searchResults && searchResults.length > 0) {
-        const info = await play.video_info(searchResults[0].url);
+      if (urlType === 'yt_video') {
+        log('Valid YouTube URL, getting video info');
+        const info = await play.video_info(input);
+        log('Got video info:', {
+          title: info.video_details.title,
+          url: info.video_details.url,
+          duration: info.video_details.durationInSec
+        });
         return {
           title: info.video_details.title,
           url: info.video_details.url,
@@ -251,57 +260,90 @@ async function validateAndGetVideoInfo(url) {
         };
       }
     }
+    
+    log('Input is not a YouTube URL, trying search...');
+    const searchResults = await play.search(input, { 
+      limit: 1,
+      source: { youtube: "video" }
+    });
+    
+    log('Search results:', searchResults);
+    
+    if (searchResults && searchResults.length > 0) {
+      const result = searchResults[0];
+      log('Found video from search:', {
+        title: result.title,
+        url: result.url,
+        duration: result.durationInSec
+      });
+      return {
+        title: result.title,
+        url: result.url,
+        duration: result.durationInSec,
+        thumbnail: result.thumbnails[0].url
+      };
+    }
+    
+    log('❌ No results found for input');
     throw new Error('No valid video found');
   } catch (error) {
-    console.error('Error validating video:', error);
+    log('❌ Error in validateAndGetVideoInfo:', error);
     throw error;
   }
 }
 
 async function handlePlay(message, args, isSpotifyTrack = false) {
   try {
+    log('Starting handlePlay...');
     // Check for music role permission
     if (!hasMusicPermission(message.member)) {
+      log('User lacks DJ role');
       return message.channel.send('❌ You need the DJ role to use music commands!');
     }
 
     const voiceChannel = message.member.voice.channel;
     if (!voiceChannel) {
+      log('User not in voice channel');
       return message.channel.send('❌ You need to be in a voice channel to play music!');
     }
 
     // Check bot permissions
     const permissions = voiceChannel.permissionsFor(message.client.user);
     if (!permissions.has('Connect') || !permissions.has('Speak')) {
+      log('Bot lacks voice permissions');
       return message.channel.send('❌ I need permissions to join and speak in your voice channel!');
     }
 
     // Get or create queue for this server
     if (!queues.has(message.guild.id)) {
+      log('Creating new queue for server');
       queues.set(message.guild.id, new MusicQueue());
     }
     const queue = queues.get(message.guild.id);
 
     // Get the input (URL or search term)
-    const input = args.join(' '); // Join all args to support search terms
+    const input = args.join(' ');
     if (!input) {
+      log('No input provided');
       return message.channel.send('❌ Please provide a YouTube URL or search term!');
     }
 
-    // Send initial status message
+    log('Processing input:', input);
     const statusMsg = await message.channel.send('🎵 Processing your request...');
 
     try {
       // Handle Spotify URLs
       if (isSpotifyUrl(input) && !isSpotifyTrack) {
+        log('Processing Spotify URL');
         const trackCount = await handleSpotifyUrl(input, message);
         await statusMsg.edit(`✅ Added ${trackCount} tracks from Spotify to the queue!`);
         return;
       }
 
       // Handle YouTube
-      console.log('Processing input:', input);
+      log('Getting video info...');
       const videoInfo = await validateAndGetVideoInfo(input);
+      log('Video info retrieved:', videoInfo);
       
       const song = {
         title: videoInfo.title,
@@ -311,7 +353,7 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
         thumbnail: videoInfo.thumbnail
       };
 
-      // Add song to queue
+      log('Adding song to queue:', song);
       queue.songs.push(song);
       
       const queueEmbed = {
@@ -323,27 +365,28 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
         }
       };
 
-      // If not playing, start playing
       if (!queue.playing) {
         queue.playing = true;
+        log('Starting playback...');
         await statusMsg.edit({ content: '', embeds: [queueEmbed] });
         try {
           await playSong(message.guild, queue, voiceChannel);
         } catch (error) {
-          console.error('Error starting playback:', error);
+          log('❌ Error starting playback:', error);
           await statusMsg.edit('❌ Error joining voice channel. Please check my permissions!');
           queue.playing = false;
           queue.songs = [];
         }
       } else {
+        log('Added to existing queue');
         await statusMsg.edit({ content: '', embeds: [queueEmbed] });
       }
     } catch (error) {
-      console.error('Error in handlePlay:', error);
+      log('❌ Error in handlePlay:', error);
       await statusMsg.edit('❌ Could not find or play the video. Please try another URL or search term.');
     }
   } catch (error) {
-    console.error('Critical error in handlePlay:', error);
+    log('❌ Critical error in handlePlay:', error);
     message.channel.send('❌ An unexpected error occurred. Please try again.');
   }
 }
