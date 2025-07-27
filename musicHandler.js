@@ -80,7 +80,12 @@ async function searchYouTube(query) {
   try {
     const results = await play.search(query, { limit: 1 });
     if (results && results.length > 0) {
-      return results[0].url;
+      return {
+        url: results[0].url,
+        title: results[0].title,
+        duration: results[0].durationInSec,
+        thumbnail: results[0].thumbnails[0].url
+      };
     }
     throw new Error('No results found');
   } catch (error) {
@@ -124,13 +129,59 @@ async function handleSpotifyUrl(url, message) {
     }
 
     // Add all tracks to queue
+    let addedTracks = 0;
     for (const track of tracks) {
-      const query = `${track.name} ${track.artists}`;
-      const youtubeUrl = await searchYouTube(query);
-      await handlePlay(message, [youtubeUrl], true);
+      try {
+        const query = `${track.name} ${track.artists}`;
+        console.log('Searching YouTube for:', query);
+        const youtubeResult = await searchYouTube(query);
+        
+        if (youtubeResult) {
+          const song = {
+            title: youtubeResult.title,
+            url: youtubeResult.url,
+            duration: youtubeResult.duration,
+            requester: message.author.tag,
+            thumbnail: youtubeResult.thumbnail
+          };
+
+          // Get or create queue
+          if (!queues.has(message.guild.id)) {
+            queues.set(message.guild.id, new MusicQueue());
+          }
+          const queue = queues.get(message.guild.id);
+
+          // Add song to queue
+          queue.songs.push(song);
+          addedTracks++;
+
+          // If not playing, start playing
+          if (!queue.playing) {
+            queue.playing = true;
+            await playSong(message.guild, queue, message.member.voice.channel);
+          }
+
+          // Send status message for first song only
+          if (addedTracks === 1) {
+            message.channel.send({
+              embeds: [{
+                color: 0x1DB954,
+                title: '🎵 Now Playing from Spotify',
+                description: `**${song.title}**\nRequested by: ${song.requester}\nDuration: ${formatDuration(song.duration)}`,
+                thumbnail: {
+                  url: song.thumbnail
+                }
+              }]
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error processing track:', error);
+        continue;
+      }
     }
 
-    return tracks.length;
+    return addedTracks;
   } catch (error) {
     console.error('Error handling Spotify URL:', error);
     throw error;
