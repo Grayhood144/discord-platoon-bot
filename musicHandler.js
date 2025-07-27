@@ -10,6 +10,7 @@ const {
 const play = require('play-dl');
 const path = require('path');
 const SpotifyWebApi = require('spotify-web-api-node');
+const config = require('./config');
 
 // Add logging function
 function log(message, data = null) {
@@ -35,24 +36,6 @@ function log(message, data = null) {
     log('❌ Error initializing play-dl:', error);
   }
 })();
-
-// Music role ID
-const MUSIC_ROLE_ID = '1398878441423634432';
-
-// Function to check if user has music permission
-function hasMusicPermission(member) {
-  return member.roles.cache.has(MUSIC_ROLE_ID);
-}
-
-// Configure FFmpeg path based on platform
-if (process.platform === 'win32') {
-  // Windows: use local FFmpeg
-  const ffmpegPath = path.join(__dirname, 'ffmpeg', 'ffmpeg.exe');
-  play.FFmpegPath = ffmpegPath;
-} else {
-  // Linux: use system FFmpeg
-  play.FFmpegPath = '/usr/bin/ffmpeg';
-}
 
 // Initialize Spotify API
 const spotifyApi = new SpotifyWebApi({
@@ -224,6 +207,9 @@ class MusicQueue {
     this.playing = false;
     this.connection = null;
     this.player = null;
+    this.volume = config.music.defaultVolume;
+    this.loop = false;
+    this.autoplay = false;
   }
 }
 
@@ -333,7 +319,7 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
 
     try {
       // Handle Spotify URLs
-      if (isSpotifyUrl(input) && !isSpotifyTrack) {
+      if (config.music.enableSpotify && isSpotifyUrl(input) && !isSpotifyTrack) {
         log('Processing Spotify URL');
         const trackCount = await handleSpotifyUrl(input, message);
         await statusMsg.edit(`✅ Added ${trackCount} tracks from Spotify to the queue!`);
@@ -362,7 +348,19 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
         description: `**${song.title}**\nRequested by: ${song.requester}\nDuration: ${formatDuration(song.duration)}`,
         thumbnail: {
           url: song.thumbnail
-        }
+        },
+        fields: [
+          {
+            name: 'Position in queue',
+            value: queue.playing ? `#${queue.songs.length}` : 'Now Playing',
+            inline: true
+          },
+          {
+            name: 'Duration',
+            value: formatDuration(song.duration),
+            inline: true
+          }
+        ]
       };
 
       if (!queue.playing) {
@@ -396,11 +394,16 @@ async function playSong(guild, queue, voiceChannel) {
     // No more songs in queue
     queue.playing = false;
     if (connections.has(guild.id)) {
-      connections.get(guild.id).destroy();
-      connections.delete(guild.id);
-    }
-    if (players.has(guild.id)) {
-      players.delete(guild.id);
+      if (config.music.leaveOnEnd) {
+        setTimeout(() => {
+          if (!queue.playing) {
+            connections.get(guild.id).destroy();
+            connections.delete(guild.id);
+            players.delete(guild.id);
+            log('Left voice channel due to queue end');
+          }
+        }, config.music.leaveOnEndCooldown);
+      }
     }
     // Send queue empty message
     const textChannel = guild.channels.cache.find(channel => 
@@ -415,7 +418,7 @@ async function playSong(guild, queue, voiceChannel) {
   try {
     // Create connection if not exists
     if (!connections.has(guild.id)) {
-      console.log('Attempting to join voice channel...');
+      log('Attempting to join voice channel...');
       const connection = joinVoiceChannel({
         channelId: voiceChannel.id,
         guildId: guild.id,
@@ -433,7 +436,7 @@ async function playSong(guild, queue, voiceChannel) {
             entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
           ]);
         } catch (error) {
-          console.error('Connection lost, cleaning up:', error);
+          log('Connection lost, cleaning up:', error);
           connection.destroy();
           connections.delete(guild.id);
           queue.playing = false;
@@ -447,9 +450,30 @@ async function playSong(guild, queue, voiceChannel) {
         }
       });
 
+      // Handle empty voice channel
+      if (config.music.leaveOnEmpty) {
+        setInterval(() => {
+          const channel = guild.channels.cache.get(voiceChannel.id);
+          if (channel && channel.members.size === 1) { // Only bot in channel
+            connection.destroy();
+            connections.delete(guild.id);
+            players.delete(guild.id);
+            queue.playing = false;
+            queue.songs = [];
+            log('Left voice channel due to being empty');
+            const textChannel = guild.channels.cache.find(channel => 
+              channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
+            );
+            if (textChannel) {
+              textChannel.send('👋 Left voice channel because it was empty.');
+            }
+          }
+        }, config.music.leaveOnEmptyCooldown);
+      }
+
       // Log connection status changes
       connection.on('stateChange', (oldState, newState) => {
-        console.log(`Voice connection state change: ${oldState.status} -> ${newState.status}`);
+        log(`Voice connection state change: ${oldState.status} -> ${newState.status}`);
       });
     }
 
@@ -464,14 +488,20 @@ async function playSong(guild, queue, voiceChannel) {
       
       // Handle song end
       player.on(AudioPlayerStatus.Idle, () => {
-        console.log('Player became idle, playing next song');
-        queue.songs.shift(); // Remove the current song
+        log('Player became idle, playing next song');
+        if (queue.loop) {
+          // Move current song to end of queue
+          const song = queue.songs.shift();
+          queue.songs.push(song);
+        } else {
+          queue.songs.shift(); // Remove current song
+        }
         playSong(guild, queue, voiceChannel); // Play next song
       });
 
       // Handle errors
       player.on('error', error => {
-        console.error('Player error:', error.message);
+        log('Player error:', error.message);
         const textChannel = guild.channels.cache.find(channel => 
           channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
         );
@@ -487,7 +517,7 @@ async function playSong(guild, queue, voiceChannel) {
 
     // Get the current song and create stream
     const song = queue.songs[0];
-    console.log('Creating stream for:', song.title);
+    log('Creating stream for:', song.title);
     
     try {
       // Get stream using play-dl
@@ -496,31 +526,107 @@ async function playSong(guild, queue, voiceChannel) {
         inputType: stream.type,
         inlineVolume: true
       });
-      resource.volume.setVolume(1);
+      resource.volume.setVolume(queue.volume / 100);
 
       // Play the song
       const player = players.get(guild.id);
       player.play(resource);
-      console.log('Started playing:', song.title);
+      log('Started playing:', song.title);
 
-      // Send now playing message
+      // Send now playing message with reactions
       const textChannel = guild.channels.cache.find(channel => 
         channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
       );
       if (textChannel) {
-        textChannel.send({
+        const nowPlayingMsg = await textChannel.send({
           embeds: [{
             color: 0x1DB954,
             title: '🎵 Now Playing',
             description: `**${song.title}**\nRequested by: ${song.requester}\nDuration: ${formatDuration(song.duration)}`,
             thumbnail: {
               url: song.thumbnail
-            }
+            },
+            fields: [
+              {
+                name: 'Volume',
+                value: `${queue.volume}%`,
+                inline: true
+              },
+              {
+                name: 'Loop',
+                value: queue.loop ? 'Enabled' : 'Disabled',
+                inline: true
+              },
+              {
+                name: 'Queue',
+                value: `${queue.songs.length} songs`,
+                inline: true
+              }
+            ]
           }]
+        });
+
+        // Add reaction controls
+        const emojis = config.music.emojis;
+        await nowPlayingMsg.react(emojis.pause);
+        await nowPlayingMsg.react(emojis.skip);
+        await nowPlayingMsg.react(emojis.stop);
+        await nowPlayingMsg.react(emojis.loop);
+
+        // Create reaction collector
+        const filter = (reaction, user) => {
+          return Object.values(emojis).includes(reaction.emoji.name) && !user.bot;
+        };
+
+        const collector = nowPlayingMsg.createReactionCollector({ filter, time: song.duration * 1000 });
+
+        collector.on('collect', async (reaction, user) => {
+          // Check if user is in voice channel
+          const member = await guild.members.fetch(user.id);
+          if (!member.voice.channel || member.voice.channel.id !== voiceChannel.id) return;
+
+          // Check DJ permissions
+          if (!hasMusicPermission(member)) return;
+
+          switch (reaction.emoji.name) {
+            case emojis.pause:
+              if (player.state.status === AudioPlayerStatus.Playing) {
+                player.pause();
+                reaction.emoji = emojis.play;
+              } else {
+                player.unpause();
+                reaction.emoji = emojis.pause;
+              }
+              break;
+            case emojis.skip:
+              player.stop();
+              break;
+            case emojis.stop:
+              queue.songs = [];
+              player.stop();
+              break;
+            case emojis.loop:
+              queue.loop = !queue.loop;
+              nowPlayingMsg.edit({
+                embeds: [{
+                  ...nowPlayingMsg.embeds[0],
+                  fields: [
+                    ...nowPlayingMsg.embeds[0].fields.slice(0, 1),
+                    {
+                      name: 'Loop',
+                      value: queue.loop ? 'Enabled' : 'Disabled',
+                      inline: true
+                    },
+                    ...nowPlayingMsg.embeds[0].fields.slice(2)
+                  ]
+                }]
+              });
+              break;
+          }
         });
       }
     } catch (error) {
-      console.error('Error creating stream:', error);
+      log('Error creating stream:', error);
       const textChannel = guild.channels.cache.find(channel => 
         channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
       );
@@ -531,7 +637,7 @@ async function playSong(guild, queue, voiceChannel) {
       playSong(guild, queue, voiceChannel); // Try next song
     }
   } catch (error) {
-    console.error('Error in playSong:', error);
+    log('Error in playSong:', error);
     const textChannel = guild.channels.cache.find(channel => 
       channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
     );
