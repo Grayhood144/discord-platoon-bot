@@ -4,6 +4,7 @@ const subsections = require('./subsections.json');
 const userRoles = require('./userRoles.json');
 const deployPath = './deployMessages.json';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { handlePlay, handleSkip, handleQueue } = require('./musicHandler');
 
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
@@ -246,16 +247,17 @@ function getRandomSauceStory() {
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.1.6",
-  lastUpdated: "2024-03-21",
+  version: "2.3.0",
+  lastUpdated: "2024-03-22",
   recentChanges: [
+    "Added music bot functionality with play, skip, and queue commands",
+    "Added DJ role requirement for music commands",
+    "Added better status messages for music playback",
+    "Added Spotify support for music playback",
     "Added Joe/Biden easter egg response",
     "Fixed subfaction order to put S.T.A.L.K.E.R. in correct position",
     "Updated message cleaner to preserve subsection discussions",
-    "Reordered subfactions to match platoon numbering",
-    "Fixed reaction roles system with better emoji handling",
-    "Updated role IDs to match current server configuration",
-    "Added hourly Disboard bump reminder"
+    "Reordered subfactions to match platoon numbering"
   ]
 };
 
@@ -589,6 +591,14 @@ const commands = async (message, client) => {
         `• \`$sync\` — Updates all members in each subsection based on Discord roles.\n` +
         `• \`$help\` — Displays this help message.\n` +
         `• \`$version\` — Shows current bot version and recent updates.\n\n` +
+        
+        `**Music Commands** (Requires DJ Role)\n` +
+        `• \`$play <url>\` — Play music from YouTube or Spotify\n` +
+        `   - Works with YouTube videos\n` +
+        `   - Works with Spotify tracks, playlists, and albums\n` +
+        `   - Must be in a voice channel\n` +
+        `• \`$skip\` — Skip the current song\n` +
+        `• \`$queue\` — Show the current music queue\n\n` +
         
         `**Veterancy Commands**\n` +
         `• \`$veterancy @user\` — Check and assign veterancy role for a specific user\n` +
@@ -1425,6 +1435,21 @@ const commands = async (message, client) => {
         const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
         setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
       }
+      break;
+    }
+
+    case '$play': {
+      await handlePlay(message, args);
+      break;
+    }
+
+    case '$skip': {
+      await handleSkip(message);
+      break;
+    }
+
+    case '$queue': {
+      await handleQueue(message);
       break;
     }
 
