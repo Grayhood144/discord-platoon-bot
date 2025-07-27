@@ -5,6 +5,7 @@ const userRoles = require('./userRoles.json');
 const deployPath = './deployMessages.json';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { handlePlay, handleSkip, handleQueue } = require('./musicHandler');
+const { exec } = require('child_process');
 
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
@@ -593,9 +594,10 @@ const commands = async (message, client) => {
         `• \`$version\` — Shows current bot version and recent updates.\n\n` +
         
         `**Music Commands** (Requires DJ Role)\n` +
-        `• \`$play <url>\` — Play music from YouTube or Spotify\n` +
+        `• \`$play <url/search>\` — Play music from YouTube or Spotify\n` +
         `   - Works with YouTube videos\n` +
         `   - Works with Spotify tracks, playlists, and albums\n` +
+        `   - Can search by name: "$play never gonna give you up"\n` +
         `   - Must be in a voice channel\n` +
         `• \`$skip\` — Skip the current song\n` +
         `• \`$queue\` — Show the current music queue\n\n` +
@@ -621,7 +623,8 @@ const commands = async (message, client) => {
         `• \`$debugroles\` — List all roles in the server.\n` +
         `• \`$eval @user rank\` — Promote a member to a specific rank.\n` +
         `• \`$reaction\` — Create an organization role selector (Dr. Sauce only).\n` +
-        `• \`$fixed\` — Remove Cadet/TRA/Trainee roles from members (Dr. Sauce only).`;
+        `• \`$fixed\` — Remove Cadet/TRA/Trainee roles from members (Dr. Sauce only).\n` +
+        `• \`$logs\` — Show recent bot logs (auto-deletes after 2 minutes).`;
       
       const sentMsg = await message.channel.send(helpText);
       setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
@@ -1542,6 +1545,45 @@ const commands = async (message, client) => {
     }
     break;
   }
+
+    case '$logs': {
+      // Only allow admins to view logs
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ You do not have permission to view logs.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        break;
+      }
+
+      try {
+        // Execute pm2 logs command
+        exec('pm2 logs discord-bot --lines 20 --nostream', async (error, stdout, stderr) => {
+          if (error) {
+            console.error('Error getting logs:', error);
+            message.channel.send('❌ Error getting logs.');
+            return;
+          }
+
+          // Split logs into chunks if they're too long
+          const logs = stdout || stderr;
+          const chunks = logs.match(/.{1,1900}/gs) || [];
+
+          for (const chunk of chunks) {
+            await message.channel.send(`\`\`\`\n${chunk}\n\`\`\``);
+          }
+
+          // Delete after 2 minutes
+          setTimeout(() => {
+            message.channel.messages.fetch({ limit: chunks.length + 1 })
+              .then(messages => messages.forEach(msg => msg.delete().catch(() => {})))
+              .catch(() => {});
+          }, 120000);
+        });
+      } catch (error) {
+        console.error('Error executing logs command:', error);
+        message.channel.send('❌ Error executing logs command.');
+      }
+      break;
+    }
 }
 };
 
