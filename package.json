@@ -14,7 +14,8 @@
     "@discordjs/voice": "^0.16.1",
     "play-dl": "^1.9.7",
     "ytdl-core": "^4.11.5",
-    "adm-zip": "^0.5.10"
+    "adm-zip": "^0.5.10",
+    "spotify-web-api-node": "^5.0.2"
   },
   "author": "Dr. Sauce",
   "license": "MIT"
