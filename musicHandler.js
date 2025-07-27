@@ -12,11 +12,18 @@ const path = require('path');
 const SpotifyWebApi = require('spotify-web-api-node');
 
 // Initialize play-dl
-play.setToken({
-    youtube: {
+(async () => {
+  try {
+    await play.setToken({
+      youtube: {
         cookie: process.env.YOUTUBE_COOKIE || ''
-    }
-});
+      }
+    });
+    console.log('✅ play-dl initialized successfully');
+  } catch (error) {
+    console.error('Error initializing play-dl:', error);
+  }
+})();
 
 // Music role ID
 const MUSIC_ROLE_ID = '1398878441423634432';
@@ -275,10 +282,10 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
     }
     const queue = queues.get(message.guild.id);
 
-    // Get the song URL
-    const url = args[0];
-    if (!url) {
-      return message.channel.send('❌ Please provide a YouTube or Spotify URL!');
+    // Get the input (URL or search term)
+    const input = args.join(' '); // Join all args to support search terms
+    if (!input) {
+      return message.channel.send('❌ Please provide a YouTube URL or search term!');
     }
 
     // Send initial status message
@@ -286,15 +293,15 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
 
     try {
       // Handle Spotify URLs
-      if (isSpotifyUrl(url) && !isSpotifyTrack) {
-        const trackCount = await handleSpotifyUrl(url, message);
+      if (isSpotifyUrl(input) && !isSpotifyTrack) {
+        const trackCount = await handleSpotifyUrl(input, message);
         await statusMsg.edit(`✅ Added ${trackCount} tracks from Spotify to the queue!`);
         return;
       }
 
-      // Handle YouTube URLs
-      console.log('Processing URL:', url);
-      const videoInfo = await validateAndGetVideoInfo(url);
+      // Handle YouTube
+      console.log('Processing input:', input);
+      const videoInfo = await validateAndGetVideoInfo(input);
       
       const song = {
         title: videoInfo.title,
