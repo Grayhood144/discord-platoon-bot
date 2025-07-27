@@ -11,6 +11,13 @@ const play = require('play-dl');
 const path = require('path');
 const SpotifyWebApi = require('spotify-web-api-node');
 
+// Initialize play-dl
+play.setToken({
+    youtube: {
+        cookie: process.env.YOUTUBE_COOKIE || ''
+    }
+});
+
 // Music role ID
 const MUSIC_ROLE_ID = '1398878441423634432';
 
@@ -208,6 +215,42 @@ function formatDuration(seconds) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
+// Function to validate YouTube URL
+async function validateAndGetVideoInfo(url) {
+  try {
+    // Check if it's a valid YouTube URL
+    const urlType = await play.validate(url);
+    console.log('URL type:', urlType);
+
+    if (urlType === 'yt_video') {
+      const info = await play.video_info(url);
+      return {
+        title: info.video_details.title,
+        url: info.video_details.url,
+        duration: info.video_details.durationInSec,
+        thumbnail: info.video_details.thumbnails[0].url
+      };
+    } else {
+      // Try to search for it
+      console.log('Searching for:', url);
+      const searchResults = await play.search(url, { limit: 1 });
+      if (searchResults && searchResults.length > 0) {
+        const info = await play.video_info(searchResults[0].url);
+        return {
+          title: info.video_details.title,
+          url: info.video_details.url,
+          duration: info.video_details.durationInSec,
+          thumbnail: info.video_details.thumbnails[0].url
+        };
+      }
+    }
+    throw new Error('No valid video found');
+  } catch (error) {
+    console.error('Error validating video:', error);
+    throw error;
+  }
+}
+
 async function handlePlay(message, args, isSpotifyTrack = false) {
   try {
     // Check for music role permission
@@ -250,33 +293,15 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
       }
 
       // Handle YouTube URLs
-      let videoInfo;
-      try {
-        // Validate URL type
-        const urlType = await play.validate(url);
-        if (urlType === 'yt_video') {
-          videoInfo = await play.video_info(url);
-        } else {
-          // Try to search for the term on YouTube
-          const searchResults = await play.search(url, { limit: 1 });
-          if (searchResults && searchResults.length > 0) {
-            videoInfo = await play.video_info(searchResults[0].url);
-          } else {
-            throw new Error('No results found');
-          }
-        }
-      } catch (error) {
-        console.error('Error getting video info:', error);
-        await statusMsg.edit('❌ Could not find video. Please try another URL or search term.');
-        return;
-      }
-
+      console.log('Processing URL:', url);
+      const videoInfo = await validateAndGetVideoInfo(url);
+      
       const song = {
-        title: videoInfo.video_details.title,
-        url: videoInfo.video_details.url,
-        duration: videoInfo.video_details.durationInSec,
+        title: videoInfo.title,
+        url: videoInfo.url,
+        duration: videoInfo.duration,
         requester: message.author.tag,
-        thumbnail: videoInfo.video_details.thumbnails[0].url
+        thumbnail: videoInfo.thumbnail
       };
 
       // Add song to queue
@@ -294,8 +319,8 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
       // If not playing, start playing
       if (!queue.playing) {
         queue.playing = true;
+        await statusMsg.edit({ content: '', embeds: [queueEmbed] });
         try {
-          await statusMsg.edit({ content: '', embeds: [queueEmbed] });
           await playSong(message.guild, queue, voiceChannel);
         } catch (error) {
           console.error('Error starting playback:', error);
@@ -308,7 +333,7 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
       }
     } catch (error) {
       console.error('Error in handlePlay:', error);
-      await statusMsg.edit('❌ Error playing this song. Please try another URL.');
+      await statusMsg.edit('❌ Could not find or play the video. Please try another URL or search term.');
     }
   } catch (error) {
     console.error('Critical error in handlePlay:', error);
