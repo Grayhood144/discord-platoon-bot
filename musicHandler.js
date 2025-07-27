@@ -8,7 +8,6 @@ const {
   NoSubscriberBehavior
 } = require('@discordjs/voice');
 const play = require('play-dl');
-const ytdl = require('ytdl-core');
 const path = require('path');
 const SpotifyWebApi = require('spotify-web-api-node');
 
@@ -199,13 +198,33 @@ async function handlePlay(message, args, isSpotifyTrack = false) {
     }
 
     // Handle YouTube URLs
-    const videoInfo = await ytdl.getInfo(url);
+    let videoInfo;
+    try {
+      // Validate URL type
+      const urlType = await play.validate(url);
+      if (urlType === 'yt_video') {
+        videoInfo = await play.video_info(url);
+      } else {
+        // Try to search for the term on YouTube
+        const searchResults = await play.search(url, { limit: 1 });
+        if (searchResults && searchResults.length > 0) {
+          videoInfo = await play.video_info(searchResults[0].url);
+        } else {
+          throw new Error('No results found');
+        }
+      }
+    } catch (error) {
+      console.error('Error getting video info:', error);
+      await statusMsg.edit('❌ Could not find video. Please try another URL or search term.');
+      return;
+    }
+
     const song = {
-      title: videoInfo.videoDetails.title,
-      url: videoInfo.videoDetails.video_url,
-      duration: videoInfo.videoDetails.lengthSeconds,
+      title: videoInfo.video_details.title,
+      url: videoInfo.video_details.url,
+      duration: videoInfo.video_details.durationInSec,
       requester: message.author.tag,
-      thumbnail: videoInfo.videoDetails.thumbnails[0].url
+      thumbnail: videoInfo.video_details.thumbnails[0].url
     };
 
     // Add song to queue
@@ -345,6 +364,8 @@ async function playSong(guild, queue, voiceChannel) {
     // Get the current song and create stream
     const song = queue.songs[0];
     console.log('Creating stream for:', song.title);
+    
+    // Get stream using play-dl
     const stream = await play.stream(song.url);
     const resource = createAudioResource(stream.stream, {
       inputType: stream.type,
