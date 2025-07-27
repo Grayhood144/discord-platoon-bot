@@ -12,6 +12,14 @@ const ytdl = require('ytdl-core');
 const path = require('path');
 const SpotifyWebApi = require('spotify-web-api-node');
 
+// Music role ID
+const MUSIC_ROLE_ID = '1398878441423634432';
+
+// Function to check if user has music permission
+function hasMusicPermission(member) {
+  return member.roles.cache.has(MUSIC_ROLE_ID);
+}
+
 // Configure FFmpeg path based on platform
 if (process.platform === 'win32') {
   // Windows: use local FFmpeg
@@ -151,6 +159,11 @@ function formatDuration(seconds) {
 }
 
 async function handlePlay(message, args, isSpotifyTrack = false) {
+  // Check for music role permission
+  if (!hasMusicPermission(message.member)) {
+    return message.channel.send('❌ You need the DJ role to use music commands!');
+  }
+
   const voiceChannel = message.member.voice.channel;
   if (!voiceChannel) {
     return message.channel.send('❌ You need to be in a voice channel to play music!');
@@ -306,6 +319,11 @@ async function playSong(guild, queue, voiceChannel) {
 }
 
 async function handleSkip(message) {
+  // Check for music role permission
+  if (!hasMusicPermission(message.member)) {
+    return message.channel.send('❌ You need the DJ role to use music commands!');
+  }
+
   if (!message.member.voice.channel) {
     return message.channel.send('❌ You need to be in a voice channel to skip music!');
   }
@@ -323,6 +341,11 @@ async function handleSkip(message) {
 }
 
 async function handleQueue(message) {
+  // Check for music role permission
+  if (!hasMusicPermission(message.member)) {
+    return message.channel.send('❌ You need the DJ role to use music commands!');
+  }
+
   const queue = queues.get(message.guild.id);
   if (!queue || queue.songs.length === 0) {
     return message.channel.send('❌ The queue is empty!');
