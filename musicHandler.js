@@ -158,107 +158,110 @@ function formatDuration(seconds) {
 }
 
 async function handlePlay(message, args, isSpotifyTrack = false) {
-  // Check for music role permission
-  if (!hasMusicPermission(message.member)) {
-    return message.channel.send('❌ You need the DJ role to use music commands!');
-  }
-
-  const voiceChannel = message.member.voice.channel;
-  if (!voiceChannel) {
-    return message.channel.send('❌ You need to be in a voice channel to play music!');
-  }
-
-  // Check bot permissions
-  const permissions = voiceChannel.permissionsFor(message.client.user);
-  if (!permissions.has('Connect') || !permissions.has('Speak')) {
-    return message.channel.send('❌ I need permissions to join and speak in your voice channel!');
-  }
-
-  // Get or create queue for this server
-  if (!queues.has(message.guild.id)) {
-    queues.set(message.guild.id, new MusicQueue());
-  }
-  const queue = queues.get(message.guild.id);
-
-  // Get the song URL
-  const url = args[0];
-  if (!url) {
-    return message.channel.send('❌ Please provide a YouTube or Spotify URL!');
-  }
-
   try {
+    // Check for music role permission
+    if (!hasMusicPermission(message.member)) {
+      return message.channel.send('❌ You need the DJ role to use music commands!');
+    }
+
+    const voiceChannel = message.member.voice.channel;
+    if (!voiceChannel) {
+      return message.channel.send('❌ You need to be in a voice channel to play music!');
+    }
+
+    // Check bot permissions
+    const permissions = voiceChannel.permissionsFor(message.client.user);
+    if (!permissions.has('Connect') || !permissions.has('Speak')) {
+      return message.channel.send('❌ I need permissions to join and speak in your voice channel!');
+    }
+
+    // Get or create queue for this server
+    if (!queues.has(message.guild.id)) {
+      queues.set(message.guild.id, new MusicQueue());
+    }
+    const queue = queues.get(message.guild.id);
+
+    // Get the song URL
+    const url = args[0];
+    if (!url) {
+      return message.channel.send('❌ Please provide a YouTube or Spotify URL!');
+    }
+
     // Send initial status message
     const statusMsg = await message.channel.send('🎵 Processing your request...');
 
-    // Handle Spotify URLs
-    if (isSpotifyUrl(url) && !isSpotifyTrack) {
-      const trackCount = await handleSpotifyUrl(url, message);
-      statusMsg.edit(`✅ Added ${trackCount} tracks from Spotify to the queue!`);
-      return;
-    }
-
-    // Handle YouTube URLs
-    let videoInfo;
     try {
-      // Validate URL type
-      const urlType = await play.validate(url);
-      if (urlType === 'yt_video') {
-        videoInfo = await play.video_info(url);
-      } else {
-        // Try to search for the term on YouTube
-        const searchResults = await play.search(url, { limit: 1 });
-        if (searchResults && searchResults.length > 0) {
-          videoInfo = await play.video_info(searchResults[0].url);
+      // Handle Spotify URLs
+      if (isSpotifyUrl(url) && !isSpotifyTrack) {
+        const trackCount = await handleSpotifyUrl(url, message);
+        await statusMsg.edit(`✅ Added ${trackCount} tracks from Spotify to the queue!`);
+        return;
+      }
+
+      // Handle YouTube URLs
+      let videoInfo;
+      try {
+        // Validate URL type
+        const urlType = await play.validate(url);
+        if (urlType === 'yt_video') {
+          videoInfo = await play.video_info(url);
         } else {
-          throw new Error('No results found');
+          // Try to search for the term on YouTube
+          const searchResults = await play.search(url, { limit: 1 });
+          if (searchResults && searchResults.length > 0) {
+            videoInfo = await play.video_info(searchResults[0].url);
+          } else {
+            throw new Error('No results found');
+          }
         }
+      } catch (error) {
+        console.error('Error getting video info:', error);
+        await statusMsg.edit('❌ Could not find video. Please try another URL or search term.');
+        return;
+      }
+
+      const song = {
+        title: videoInfo.video_details.title,
+        url: videoInfo.video_details.url,
+        duration: videoInfo.video_details.durationInSec,
+        requester: message.author.tag,
+        thumbnail: videoInfo.video_details.thumbnails[0].url
+      };
+
+      // Add song to queue
+      queue.songs.push(song);
+      
+      const queueEmbed = {
+        color: 0x1DB954,
+        title: queue.playing ? '🎵 Added to Queue' : '🎵 Now Playing',
+        description: `**${song.title}**\nRequested by: ${song.requester}\nDuration: ${formatDuration(song.duration)}`,
+        thumbnail: {
+          url: song.thumbnail
+        }
+      };
+
+      // If not playing, start playing
+      if (!queue.playing) {
+        queue.playing = true;
+        try {
+          await statusMsg.edit({ content: '', embeds: [queueEmbed] });
+          await playSong(message.guild, queue, voiceChannel);
+        } catch (error) {
+          console.error('Error starting playback:', error);
+          await statusMsg.edit('❌ Error joining voice channel. Please check my permissions!');
+          queue.playing = false;
+          queue.songs = [];
+        }
+      } else {
+        await statusMsg.edit({ content: '', embeds: [queueEmbed] });
       }
     } catch (error) {
-      console.error('Error getting video info:', error);
-      await statusMsg.edit('❌ Could not find video. Please try another URL or search term.');
-      return;
-    }
-
-    const song = {
-      title: videoInfo.video_details.title,
-      url: videoInfo.video_details.url,
-      duration: videoInfo.video_details.durationInSec,
-      requester: message.author.tag,
-      thumbnail: videoInfo.video_details.thumbnails[0].url
-    };
-
-    // Add song to queue
-    queue.songs.push(song);
-    
-    if (!isSpotifyTrack) {
-      await statusMsg.edit({
-        content: '',
-        embeds: [{
-          color: 0x1DB954,
-          title: queue.playing ? '🎵 Added to Queue' : '🎵 Now Playing',
-          description: `**${song.title}**\nRequested by: ${song.requester}\nDuration: ${formatDuration(song.duration)}`,
-          thumbnail: {
-            url: song.thumbnail
-          }
-        }]
-      });
-    }
-
-    // If not playing, start playing
-    if (!queue.playing) {
-      queue.playing = true;
-      try {
-        await playSong(message.guild, queue, voiceChannel);
-      } catch (error) {
-        console.error('Error starting playback:', error);
-        message.channel.send('❌ Error joining voice channel. Please check my permissions!');
-        queue.playing = false;
-        queue.songs = [];
-      }
+      console.error('Error in handlePlay:', error);
+      await statusMsg.edit('❌ Error playing this song. Please try another URL.');
     }
   } catch (error) {
-    console.error('Error playing song:', error);
-    message.channel.send('❌ Error playing this song. Please try another URL.');
+    console.error('Critical error in handlePlay:', error);
+    message.channel.send('❌ An unexpected error occurred. Please try again.');
   }
 }
 
@@ -304,10 +307,17 @@ async function playSong(guild, queue, voiceChannel) {
             entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
           ]);
         } catch (error) {
+          console.error('Connection lost, cleaning up:', error);
           connection.destroy();
           connections.delete(guild.id);
           queue.playing = false;
           queue.songs = [];
+          const textChannel = guild.channels.cache.find(channel => 
+            channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
+          );
+          if (textChannel) {
+            textChannel.send('❌ Lost connection to voice channel. Please try again.');
+          }
         }
       });
 
@@ -328,32 +338,20 @@ async function playSong(guild, queue, voiceChannel) {
       
       // Handle song end
       player.on(AudioPlayerStatus.Idle, () => {
-        const finishedSong = queue.songs.shift(); // Remove the current song
-        // Send next song message if there are more songs
-        if (queue.songs.length > 0) {
-          const textChannel = guild.channels.cache.find(channel => 
-            channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
-          );
-          if (textChannel) {
-            const nextSong = queue.songs[0];
-            textChannel.send({
-              embeds: [{
-                color: 0x1DB954,
-                title: '🎵 Now Playing',
-                description: `**${nextSong.title}**\nRequested by: ${nextSong.requester}\nDuration: ${formatDuration(nextSong.duration)}`,
-                thumbnail: {
-                  url: nextSong.thumbnail
-                }
-              }]
-            });
-          }
-        }
+        console.log('Player became idle, playing next song');
+        queue.songs.shift(); // Remove the current song
         playSong(guild, queue, voiceChannel); // Play next song
       });
 
       // Handle errors
       player.on('error', error => {
         console.error('Player error:', error.message);
+        const textChannel = guild.channels.cache.find(channel => 
+          channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
+        );
+        if (textChannel) {
+          textChannel.send('❌ Error playing song, skipping to next song...');
+        }
         queue.songs.shift(); // Skip problematic song
         playSong(guild, queue, voiceChannel); // Try next song
       });
@@ -365,21 +363,55 @@ async function playSong(guild, queue, voiceChannel) {
     const song = queue.songs[0];
     console.log('Creating stream for:', song.title);
     
-    // Get stream using play-dl
-    const stream = await play.stream(song.url);
-    const resource = createAudioResource(stream.stream, {
-      inputType: stream.type,
-      inlineVolume: true
-    });
-    resource.volume.setVolume(1);
+    try {
+      // Get stream using play-dl
+      const stream = await play.stream(song.url);
+      const resource = createAudioResource(stream.stream, {
+        inputType: stream.type,
+        inlineVolume: true
+      });
+      resource.volume.setVolume(1);
 
-    // Play the song
-    const player = players.get(guild.id);
-    player.play(resource);
-    console.log('Started playing:', song.title);
+      // Play the song
+      const player = players.get(guild.id);
+      player.play(resource);
+      console.log('Started playing:', song.title);
 
+      // Send now playing message
+      const textChannel = guild.channels.cache.find(channel => 
+        channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
+      );
+      if (textChannel) {
+        textChannel.send({
+          embeds: [{
+            color: 0x1DB954,
+            title: '🎵 Now Playing',
+            description: `**${song.title}**\nRequested by: ${song.requester}\nDuration: ${formatDuration(song.duration)}`,
+            thumbnail: {
+              url: song.thumbnail
+            }
+          }]
+        });
+      }
+    } catch (error) {
+      console.error('Error creating stream:', error);
+      const textChannel = guild.channels.cache.find(channel => 
+        channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
+      );
+      if (textChannel) {
+        textChannel.send('❌ Error playing song, skipping...');
+      }
+      queue.songs.shift(); // Skip problematic song
+      playSong(guild, queue, voiceChannel); // Try next song
+    }
   } catch (error) {
     console.error('Error in playSong:', error);
+    const textChannel = guild.channels.cache.find(channel => 
+      channel.type === 0 && channel.permissionsFor(guild.members.me).has('SendMessages')
+    );
+    if (textChannel) {
+      textChannel.send('❌ An error occurred while playing music. Please try again.');
+    }
     queue.songs.shift(); // Skip problematic song
     playSong(guild, queue, voiceChannel); // Try next song
   }
