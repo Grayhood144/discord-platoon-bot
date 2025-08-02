@@ -248,18 +248,23 @@ function getRandomSauceStory() {
 
 // Bot version and changelog
 const BOT_VERSION = {
-  version: "2.3.0",
-  lastUpdated: "2024-03-22",
+  version: "2.4.0",
+  lastUpdated: "2024-03-23",
   recentChanges: [
-    "Added music bot functionality with play, skip, and queue commands",
-    "Added DJ role requirement for music commands",
-    "Added better status messages for music playback",
-    "Added Spotify support for music playback",
-    "Added Joe/Biden easter egg response",
-    "Fixed subfaction order to put S.T.A.L.K.E.R. in correct position",
-    "Updated message cleaner to preserve subsection discussions",
-    "Reordered subfactions to match platoon numbering"
+    "Restricted subfaction role assignment to officers and instructors",
+    "Added requirement to mention users for subfaction role assignment",
+    "Prevented self-assignment of subfaction roles",
+    "Standardized message cleanup timeouts",
+    "Updated help messages and error notifications"
   ]
+};
+
+// Message cleanup timeouts (in milliseconds)
+const TIMEOUTS = {
+  ERROR_MESSAGE: 10000,    // 10 seconds for error messages
+  HELP_MESSAGE: 30000,     // 30 seconds for help messages
+  STATUS_MESSAGE: 15000,   // 15 seconds for status updates
+  COMMAND_MESSAGE: 5000    // 5 seconds for command acknowledgments
 };
 
 // Important role IDs to check
@@ -627,14 +632,14 @@ const commands = async (message, client) => {
         `• \`$logs\` — Show recent bot logs (auto-deletes after 2 minutes).`;
       
       const sentMsg = await message.channel.send(helpText);
-      setTimeout(() => sentMsg.delete().catch(() => {}), 60000);
+      setTimeout(() => sentMsg.delete().catch(() => {}), TIMEOUTS.HELP_MESSAGE);
       break;
     }
 
     case '$sync': {
       if (!hasRole(author, SYNC_ACCESS) && authorID !== '603550636545540096') {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -777,7 +782,7 @@ const commands = async (message, client) => {
       } catch (error) {
         console.error('Sync error:', error);
         const errorMsg = await message.channel.send(`❌ Error syncing subsections: ${error.message}`);
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -786,11 +791,11 @@ const commands = async (message, client) => {
       try {
         await updateDeployMessage(client, message.channel);
         const successMsg = await message.channel.send('✅ Deploy message updated successfully.');
-        setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => successMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
       } catch (error) {
         console.error('Deploy error:', error);
         const errorMsg = await message.channel.send(`❌ Error updating deploy message: ${error.message}`);
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -798,7 +803,7 @@ const commands = async (message, client) => {
     case '$clear': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -806,7 +811,7 @@ const commands = async (message, client) => {
       
       if (!subsections[section]) {
         const errorMsg = await message.channel.send('❌ Subsection not found.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -821,20 +826,20 @@ const commands = async (message, client) => {
         addToAuditLog(`${formatName(message.author, message.guild)} cleared ${target} from ${section}`);
       } else {
         const errorMsg = await message.channel.send('❌ Invalid target. Use: officers, instructors, members, or all');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       break;
     }
 
       saveJSON('./subsections.json', subsections);
       const successMsg = await message.channel.send(`✅ Cleared ${target} in ${section}.`);
-      setTimeout(() => successMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => successMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
       break;
     }
 
     case '$auditlog': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -844,14 +849,14 @@ const commands = async (message, client) => {
         : '**Audit Log:** No recent activity.';
       
       const logMsg = await message.channel.send(logText);
-      setTimeout(() => logMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => logMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
       break;
     }
 
     case '$clearall': {
       if (!isAdmin && !message.content.includes('2430114')) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -881,7 +886,7 @@ const commands = async (message, client) => {
       } catch (error) {
         console.error('Clearall error:', error);
         const errorMsg = await message.channel.send('❌ Error clearing messages.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -889,7 +894,7 @@ const commands = async (message, client) => {
     case '$clearcommands': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -909,7 +914,7 @@ const commands = async (message, client) => {
       } catch (error) {
         console.error('Clearcommands error:', error);
         const errorMsg = await message.channel.send('❌ Error clearing command messages.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         }
       break;
     }
@@ -917,13 +922,13 @@ const commands = async (message, client) => {
     case '$$deploy': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
       testingMode = args[0] === 'true';
       const statusMsg = await message.channel.send(`🧪 Testing mode is now ${testingMode ? 'enabled' : 'disabled'}.`);
-      setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => statusMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
       addToAuditLog(`${formatName(message.author, message.guild)} ${testingMode ? 'enabled' : 'disabled'} testing mode`);
       break;
     }
@@ -931,13 +936,13 @@ const commands = async (message, client) => {
     case 'SauceTest14405': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
       testingMode = true;
       const statusMsg = await message.channel.send('🧪 Testing mode activated.');
-      setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => statusMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
       addToAuditLog(`${formatName(message.author, message.guild)} activated testing mode`);
       break;
     }
@@ -945,13 +950,13 @@ const commands = async (message, client) => {
     case 'SauceTestend14405': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
       testingMode = false;
       const statusMsg = await message.channel.send('🧪 Testing mode ended.');
-      setTimeout(() => statusMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => statusMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
       addToAuditLog(`${formatName(message.author, message.guild)} ended testing mode`);
       break;
     }
@@ -959,7 +964,7 @@ const commands = async (message, client) => {
     case '$veterancy': {
       if (!hasRole(author, SYNC_ACCESS) && authorID !== '603550636545540096') {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -968,7 +973,7 @@ const commands = async (message, client) => {
 
       if (!target) {
         const errorMsg = await message.channel.send('❌ Please specify a user (@user) or "all" to check all members.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -1005,7 +1010,7 @@ const commands = async (message, client) => {
             : `✅ **Veterancy Assignment Complete**\n\n${results.slice(0, 20).join('\n')}${results.length > 20 ? `\n\n... and ${results.length - 20} more members` : ''}\n\n**Total processed:** ${processedCount}\n**Roles assigned:** ${assignedCount}`;
 
           await statusMsg.edit(reportText);
-          setTimeout(() => statusMsg.delete().catch(() => {}), 30000);
+          setTimeout(() => statusMsg.delete().catch(() => {}), TIMEOUTS.STATUS_MESSAGE);
 
           addToAuditLog(`${formatName(message.author, message.guild)} ${isCheckOnly ? 'checked' : 'assigned'} veterancy for all members`);
 
@@ -1016,7 +1021,7 @@ const commands = async (message, client) => {
           
           if (!member) {
             const errorMsg = await message.channel.send('❌ User not found in this server.');
-            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+            setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
             break;
           }
 
@@ -1029,18 +1034,18 @@ const commands = async (message, client) => {
             const resultText = `📊 **Veterancy ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}**\n\n**Member:** ${result.member}\n**Join Date:** ${result.joinDate}\n**Time in Server:** ${result.monthsInServer} months (${result.daysInServer} days)\n**Veterancy Level:** ${result.veterancyLevel}${roleText}`;
             
             const successMsg = await message.channel.send(resultText);
-            setTimeout(() => successMsg.delete().catch(() => {}), 15000);
+            setTimeout(() => successMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
 
             addToAuditLog(`${formatName(message.author, message.guild)} ${actionText} veterancy for ${result.member}`);
           } else {
             const errorMsg = await message.channel.send('❌ Could not determine veterancy for this user.');
-            setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+            setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
           }
         }
       } catch (error) {
         console.error('Veterancy error:', error);
         const errorMsg = await message.channel.send(`❌ Error processing veterancy: ${error.message}`);
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1072,13 +1077,13 @@ const commands = async (message, client) => {
         };
 
         const versionMsg = await message.channel.send({ embeds: [versionEmbed] });
-        setTimeout(() => versionMsg.delete().catch(() => {}), 30000);
+        setTimeout(() => versionMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
         // Delete the original command
         await message.delete().catch(() => {});
       } catch (error) {
         console.error('Version command error:', error);
         const errorMsg = await message.channel.send('❌ Error displaying version info.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1086,7 +1091,7 @@ const commands = async (message, client) => {
     case '$debugroles': {
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to use this command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -1202,7 +1207,7 @@ const commands = async (message, client) => {
           }, 30000);
         } else {
           const msg = await message.channel.send(roleList);
-          setTimeout(() => msg.delete().catch(() => {}), 30000);
+          setTimeout(() => msg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
         }
 
         // Delete the original command
@@ -1210,7 +1215,7 @@ const commands = async (message, client) => {
       } catch (error) {
         console.error('Debug roles error:', error);
         const errorMsg = await message.channel.send(`❌ Error listing roles: ${error.message}`);
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1219,14 +1224,14 @@ const commands = async (message, client) => {
       // Check if the user is a warrant officer or - - - - OFC - - - -
       if (!hasRole(author, [WARRANT_OFFICER_ROLE, OFFICER_ROLE])) {
         const errorMsg = await message.channel.send(`❌ ${getRandomSauceStory()}\n\nOh, and by the way, you can't use this command. Only Warrant Officers and - - - - OFC - - - - can do that.`);
-        setTimeout(() => errorMsg.delete().catch(() => {}), 15000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
       // Check command format
       if (args.length !== 2) {
         const errorMsg = await message.channel.send('❌ Invalid command format. Use: `$eval @user rank` where rank is private, pfc, or lance');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -1237,7 +1242,7 @@ const commands = async (message, client) => {
       // Validate rank
       if (!['private', 'pfc', 'lance'].includes(rank)) {
         const errorMsg = await message.channel.send('❌ Invalid rank. Must be one of: private, pfc, lance');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
@@ -1249,7 +1254,7 @@ const commands = async (message, client) => {
         // Check if user has Cadet role
         if (!hasRole(targetMember, [REMOVE_ROLES.cadet])) {
           const errorMsg = await message.channel.send('❌ This command can only be used on members with the Cadet role.');
-          setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
           break;
         }
 
@@ -1270,14 +1275,14 @@ const commands = async (message, client) => {
 
         // Log the promotion
         const successMsg = await message.channel.send(`✅ Successfully promoted ${targetMember.user.tag} to ${rank.toUpperCase()}`);
-        setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => successMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
         
         // Add to audit log
         addToAuditLog(`${formatName(message.author, message.guild)} promoted ${formatName(targetMember.user, message.guild)} to ${rank.toUpperCase()}`);
       } catch (error) {
         console.error('Eval command error:', error);
         const errorMsg = await message.channel.send(`❌ Error executing command: ${error.message}`);
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1295,7 +1300,7 @@ const commands = async (message, client) => {
         const hasPermission = hasRole(author, [WARRANT_OFFICER_ROLE, PLATOON_INSTRUCTOR_ROLE, OFFICER_ROLE]);
         if (!hasPermission) {
           const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nOh, by the way, only Warrant Officers, Platoon Instructors, and Officers can assign subfaction roles!");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
           break;
         }
 
@@ -1303,14 +1308,14 @@ const commands = async (message, client) => {
         const targetMember = message.mentions.members.first();
         if (!targetMember) {
           const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nHmm, you need to mention a user to assign them to a subfaction! Example: $meth @user");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
           break;
         }
 
         // Prevent self-assignment
         if (targetMember.id === author.id) {
           const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nHey, you can't assign roles to yourself! Ask another officer to help you out.");
-          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
           break;
         }
 
@@ -1321,7 +1326,7 @@ const commands = async (message, client) => {
       } catch (error) {
         console.error(`Error assigning ${cmd} role:`, error);
         const errorMsg = await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1335,13 +1340,13 @@ const commands = async (message, client) => {
         });
         helpText += '\n*Note: Members can only be in one faction at a time.*';
         const helpMsg = await message.channel.send(helpText);
-        setTimeout(() => helpMsg.delete().catch(() => {}), 30000);
+        setTimeout(() => helpMsg.delete().catch(() => {}), TIMEOUTS.HELP_MESSAGE);
         // Delete the original command message
         await message.delete().catch(() => {});
       } catch (error) {
         console.error('Error showing faction help:', error);
         const errorMsg = await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1382,13 +1387,13 @@ const commands = async (message, client) => {
         };
 
         const infoMsg = await message.channel.send({ embeds: [infoEmbed] });
-        setTimeout(() => infoMsg.delete().catch(() => {}), 60000);
+        setTimeout(() => infoMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
         // Delete the original command message
         await message.delete().catch(() => {});
       } catch (error) {
         console.error('Error showing role info:', error);
         const errorMsg = await message.channel.send('*Drops clipboard* Something went wrong! Please try again later.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1418,7 +1423,7 @@ const commands = async (message, client) => {
       
       if (!hasPermission) {
         const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nAnd that's why I'm not allowed to delete messages without proper clearance anymore!");
-        setTimeout(() => errorMsg.delete().catch(() => {}), 15000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         return;
       }
 
@@ -1427,7 +1432,7 @@ const commands = async (message, client) => {
 
       if (!validAmounts.includes(amount)) {
         const errorMsg = await message.channel.send("Pro tip: My totally legitimate medical license only allows me to work with 5, 10, or 50. Don't ask why, long story...");
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         return;
       }
 
@@ -1452,14 +1457,14 @@ const commands = async (message, client) => {
 
         // Send success message with random funny quote
         const successMsg = await message.channel.send(DELETE_MESSAGES[Math.floor(Math.random() * DELETE_MESSAGES.length)]);
-        setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => successMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
 
         // Add to audit log
         addToAuditLog(`${formatName(message.author, message.guild)} deleted ${filteredMessages.size} messages in ${message.channel.name}`);
       } catch (error) {
         console.error('Delete error:', error);
         const errorMsg = await message.channel.send("Well, that failed spectacularly! *looks at camera* Just like my last performance review!");
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
@@ -1483,7 +1488,7 @@ const commands = async (message, client) => {
     // Check if user is Sauce
     if (authorID !== '603550636545540096') {
       const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nSpeaking of which, only the real Dr. Sauce can run this fix!");
-      setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       break;
     }
 
@@ -1557,14 +1562,14 @@ const commands = async (message, client) => {
         `• Added Organization role to ${orgRoleAdded} members with subsection roles\n` +
         `*Note: Removed Cadet, TRA, and Trainee roles from members who shouldn't have them.*`
       );
-      setTimeout(() => completionMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => completionMsg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
       
       // Add to audit log
       addToAuditLog(`${formatName(message.author, message.guild)} ran role cleanup, fixed ${fixedCount} members, added org role to ${orgRoleAdded} members`);
     } catch (error) {
       console.error('Fixed command error:', error);
       const errorMsg = await message.channel.send(`❌ *Drops scalpel* Oops! Something went wrong: ${error.message}`);
-      setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+      setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
     }
     break;
   }
@@ -1573,7 +1578,7 @@ const commands = async (message, client) => {
       // Only allow admins to view logs
       if (!isAdmin) {
         const errorMsg = await message.channel.send('❌ You do not have permission to view logs.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
