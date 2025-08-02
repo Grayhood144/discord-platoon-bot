@@ -1307,6 +1307,13 @@ const commands = async (message, client) => {
           break;
         }
 
+        // Prevent self-assignment
+        if (targetMember.id === author.id) {
+          const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nHey, you can't assign roles to yourself! Ask another officer to help you out.");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          break;
+        }
+
         const faction = SUBFACTION_ROLES[cmd.substring(1).toUpperCase()];
         await assignFactionRole(targetMember, faction, message);
         // Delete the original command message
@@ -1600,7 +1607,7 @@ const commands = async (message, client) => {
       }
       break;
     }
-}
+  }
 };
 
 // Export the setup function
