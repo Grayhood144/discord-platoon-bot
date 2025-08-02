@@ -1291,9 +1291,24 @@ const commands = async (message, client) => {
     case '$geneva':
     case '$static': {
       try {
-        const member = message.member;
+        // Check if user has permission to assign roles
+        const hasPermission = hasRole(author, [WARRANT_OFFICER_ROLE, PLATOON_INSTRUCTOR_ROLE, OFFICER_ROLE]);
+        if (!hasPermission) {
+          const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nOh, by the way, only Warrant Officers, Platoon Instructors, and Officers can assign subfaction roles!");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          break;
+        }
+
+        // Check if a user was mentioned
+        const targetMember = message.mentions.members.first();
+        if (!targetMember) {
+          const errorMsg = await message.channel.send(getRandomSauceStory() + "\n\nHmm, you need to mention a user to assign them to a subfaction! Example: $meth @user");
+          setTimeout(() => errorMsg.delete().catch(() => {}), 10000);
+          break;
+        }
+
         const faction = SUBFACTION_ROLES[cmd.substring(1).toUpperCase()];
-        await assignFactionRole(member, faction, message);
+        await assignFactionRole(targetMember, faction, message);
         // Delete the original command message
         await message.delete().catch(() => {});
       } catch (error) {
@@ -1307,10 +1322,11 @@ const commands = async (message, client) => {
     case '$factions': {
       try {
         let helpText = '**Available Faction Commands:**\n\n';
+        helpText += '*Note: Only Warrant Officers, Platoon Instructors, and Officers can assign subfaction roles.*\n\n';
         Object.values(SUBFACTION_ROLES).forEach(faction => {
-          helpText += `\`$${faction.name.toLowerCase().replace(/\./g, '')}\` - Join ${faction.name}\n`;
+          helpText += `\`$${faction.name.toLowerCase().replace(/\./g, '')} @user\` - Assign user to ${faction.name}\n`;
         });
-        helpText += '\n*Note: You can only be in one faction at a time.*';
+        helpText += '\n*Note: Members can only be in one faction at a time.*';
         const helpMsg = await message.channel.send(helpText);
         setTimeout(() => helpMsg.delete().catch(() => {}), 30000);
         // Delete the original command message
