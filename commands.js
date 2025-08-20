@@ -1747,6 +1747,13 @@ const commands = async (message, client) => {
         break;
       }
 
+      // Check if target user is in a voice channel
+      if (!targetMember.voice.channel) {
+        const errorMsg = await message.channel.send('❌ Target user is not in a voice channel!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
       try {
         // Get the target voice channel
         const targetVC = message.guild.channels.cache.get('1301245409330593803');
@@ -1756,31 +1763,39 @@ const commands = async (message, client) => {
           break;
         }
 
-        // Move the target user to the specified voice channel
-        if (targetMember.voice.channel) {
-          await targetMember.voice.setChannel(targetVC);
-        } else {
-          const errorMsg = await message.channel.send('❌ Target user is not in a voice channel!');
-          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-          break;
-        }
-
-        // Move the bot to the same channel
+        // Join the user's voice channel first
         const connection = joinVoiceChannel({
-          channelId: targetVC.id,
+          channelId: voiceChannel.id,
           guildId: message.guild.id,
           adapterCreator: message.guild.voiceAdapterCreator,
           selfDeaf: false,
           selfMute: false
         });
 
-        // Send a message
-        const takeMsg = await message.channel.send(`👻 *Taking ${targetMember.displayName} to the shadow realm...*`);
+        // Send initial message
+        const takeMsg = await message.channel.send(`👻 *Preparing to take ${targetMember.displayName}...*`);
 
-        // Wait 3 seconds then disconnect
-        setTimeout(() => {
-          connection.destroy();
-          takeMsg.edit(`✨ *${targetMember.displayName} has been taken...*`);
+        // Wait 3 seconds, then move both bot and user
+        setTimeout(async () => {
+          try {
+            // Move the target user
+            await targetMember.voice.setChannel(targetVC);
+            // Move the bot
+            connection.rejoin({
+              channelId: targetVC.id,
+              selfDeaf: false,
+              selfMute: false
+            });
+            // Update message
+            await takeMsg.edit(`✨ *${targetMember.displayName} has been taken to the shadow realm...*`);
+            // Disconnect after moving
+            setTimeout(() => {
+              connection.destroy();
+            }, 500);
+          } catch (moveError) {
+            console.error('Error during move:', moveError);
+            connection.destroy();
+          }
         }, 3000);
 
         // Add to audit log
