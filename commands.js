@@ -1631,49 +1631,71 @@ const commands = async (message, client) => {
         break;
       }
 
-      // Check if the author is in a voice channel
-      const voiceChannel = message.member.voice.channel;
-      if (!voiceChannel) {
+      // Check if Sauce is in a voice channel
+      const sauceVoiceChannel = message.member.voice.channel;
+      if (!sauceVoiceChannel) {
         const errorMsg = await message.channel.send('❌ You need to be in a voice channel to use this command!');
         setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
 
       try {
-        // Check if thunder.mp3 exists
-        const thunderPath = path.join(__dirname, 'thunder.mp3');
-        if (!fs.existsSync(thunderPath)) {
-          const errorMsg = await message.channel.send('❌ Thunder sound effect not found!');
+        // Define the channel sequence (from bottom to top)
+        const channelSequence = [
+          '1301245409330593803', // Snooze Bin
+          '1340070099692027994', // SC-Farming 02
+          '1340070351794602004', // SC-Farming 01
+          '1331710883738685565', // Squad-05
+          '1331710841363501117', // Squad-04
+          '1331710637952467034', // Squad-03
+          '1301246845544042506', // Squad-02
+          '1295508021585117248', // Squad-01
+          '1331710503415713922'  // Casual Coms
+        ];
+
+        // Find Sauce's channel position in the sequence
+        const sauceChannelIndex = channelSequence.indexOf(sauceVoiceChannel.id);
+        if (sauceChannelIndex === -1) {
+          const errorMsg = await message.channel.send('❌ You need to be in one of the main voice channels!');
           setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
           break;
         }
 
-        // Create a new connection
+        // Create connection starting from Snooze Bin
         const connection = joinVoiceChannel({
-          channelId: voiceChannel.id,
+          channelId: channelSequence[0],
           guildId: message.guild.id,
           adapterCreator: message.guild.voiceAdapterCreator,
           selfDeaf: false,
           selfMute: false
         });
 
-        // Create audio player with error handling
+        // Send initial message
+        const strikeMsg = await message.channel.send('⚡ *Thunder approaches...*');
+
+        // Animate through channels
+        for (let i = 1; i <= sauceChannelIndex; i++) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between moves
+          connection.rejoin({
+            channelId: channelSequence[i],
+            selfDeaf: false,
+            selfMute: false
+          });
+          await strikeMsg.edit(`⚡ *Thunder grows closer...* ${'.'.repeat(i + 1)}`);
+        }
+
+        // Now we're in Sauce's channel, wait 3 seconds
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // Create audio player
         const player = createAudioPlayer({
           behaviors: {
             noSubscriber: NoSubscriberBehavior.Play
           }
         });
 
-        // Handle player errors
-        player.on('error', error => {
-          console.error('Error:', error.message);
-          message.channel.send('❌ Error playing thunder sound!').then(msg => {
-            setTimeout(() => msg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-          });
-        });
-
-        // Create audio resource with proper options
-        const resource = createAudioResource(thunderPath, {
+        // Create audio resource from thunder.mp3
+        const resource = createAudioResource(path.join(__dirname, 'thunder.mp3'), {
           inputType: 'oggopus',
           inlineVolume: true,
         });
@@ -1681,14 +1703,12 @@ const commands = async (message, client) => {
         // Set volume to maximum for dramatic effect
         resource.volume.setVolume(2);
 
-        // Subscribe connection to player
-        connection.subscribe(player);
-
         // Play the thunder sound
         player.play(resource);
+        connection.subscribe(player);
 
-        // Send a dramatic message
-        const strikeMsg = await message.channel.send('⚡ *Thunder crashes!* ⚡');
+        // Update message
+        await strikeMsg.edit('💥 *THUNDER STRIKES!* ⚡');
 
         // When the sound finishes playing
         player.on(AudioPlayerStatus.Idle, async () => {
@@ -1696,14 +1716,13 @@ const commands = async (message, client) => {
             // Disconnect the target user if they're in a voice channel
             if (targetMember.voice.channel) {
               await targetMember.voice.disconnect();
-              await strikeMsg.edit('💥 *Thunder strikes ' + targetMember.displayName + '!* ⚡');
+              await strikeMsg.edit(`⚡ *${targetMember.displayName} was struck by lightning!* 💥`);
             }
-            // Destroy the connection after a short delay
-            setTimeout(() => {
-              connection.destroy();
-            }, 1000);
+            // Destroy the connection
+            connection.destroy();
           } catch (error) {
             console.error('Error in idle handler:', error);
+            connection.destroy();
           }
         });
 
