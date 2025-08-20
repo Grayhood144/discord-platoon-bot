@@ -3,6 +3,7 @@ const { Client, GatewayIntentBits, Partials } = require('discord.js');
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 const handleMessageCleanup = require('./messageCleaner');
 const commandModule = require('./commands');
@@ -23,6 +24,71 @@ const ORGANIZATION_CHANNEL_ID = '1336126211264352298';
 
 // Role sync interval (24 hours)
 const ROLE_SYNC_INTERVAL = 24 * 60 * 60 * 1000;
+
+// Channel IDs
+const GENERAL_CHANNEL_ID = '1295508021585117247';
+
+// Random VC check interval (1 hour)
+const VC_CHECK_INTERVAL = 60 * 60 * 1000;
+
+// Function to perform random VC interaction
+async function checkRandomVCInteraction(guild) {
+  try {
+    // Get all voice channels
+    const voiceChannels = guild.channels.cache.filter(channel => channel.type === 2); // 2 is voice channel type
+
+    // Get all members in voice channels
+    let membersInVC = [];
+    for (const [_, channel] of voiceChannels) {
+      for (const [_, member] of channel.members) {
+        // Skip bots
+        if (!member.user.bot) {
+          membersInVC.push({
+            member: member,
+            channel: channel
+          });
+        }
+      }
+    }
+
+    // If no one is in VC, return
+    if (membersInVC.length === 0) return;
+
+    // 1 in 10 chance for each member
+    for (const { member, channel } of membersInVC) {
+      if (Math.random() < 0.1) { // 10% chance
+        // Get the general channel
+        const generalChannel = guild.channels.cache.get(GENERAL_CHANNEL_ID);
+        if (!generalChannel) continue;
+
+        // Join their voice channel
+        const connection = joinVoiceChannel({
+          channelId: channel.id,
+          guildId: guild.id,
+          adapterCreator: guild.voiceAdapterCreator,
+          selfDeaf: false,
+          selfMute: false
+        });
+
+        // Send first message
+        await generalChannel.send(`${member} (Helldivers 2 maybe, ${member}?)`);
+
+        // Wait 15 seconds
+        setTimeout(async () => {
+          // Send second message
+          await generalChannel.send(`(${member} gotta piss.)`);
+          // Disconnect
+          connection.destroy();
+        }, 15000);
+
+        // Log the interaction
+        console.log(`Performed random VC interaction with ${member.user.tag}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error in random VC interaction:', error);
+  }
+}
 
 const client = new Client({
   intents: [
@@ -88,6 +154,13 @@ client.once('ready', async () => {
       }, client);
     }
     console.log('✅ Initial role sync complete');
+
+    // Set up hourly random VC check for each guild
+    setInterval(() => {
+      client.guilds.cache.forEach(guild => {
+        checkRandomVCInteraction(guild);
+      });
+    }, VC_CHECK_INTERVAL);
 
     // Set up daily role sync
     setInterval(async () => {
