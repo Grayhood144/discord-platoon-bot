@@ -1632,7 +1632,7 @@ const commands = async (message, client) => {
       }
 
       // Check if the author is in a voice channel
-      const voiceChannel = author.voice.channel;
+      const voiceChannel = message.member.voice.channel;
       if (!voiceChannel) {
         const errorMsg = await message.channel.send('❌ You need to be in a voice channel to use this command!');
         setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
