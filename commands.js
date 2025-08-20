@@ -1722,6 +1722,77 @@ const commands = async (message, client) => {
       }
       break;
     }
+
+    case '$take': {
+      // Only allow Sauce to use this command
+      if (message.author.id !== '603550636545540096') {
+        const errorMsg = await message.channel.send('❌ Only Dr. Sauce can use this command!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      // Check if a user was mentioned
+      const targetMember = message.mentions.members.first();
+      if (!targetMember) {
+        const errorMsg = await message.channel.send('❌ You need to mention a user to take!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      // Check if the author is in a voice channel
+      const voiceChannel = message.member.voice.channel;
+      if (!voiceChannel) {
+        const errorMsg = await message.channel.send('❌ You need to be in a voice channel to use this command!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      try {
+        // Get the target voice channel
+        const targetVC = message.guild.channels.cache.get('1301245409330593803');
+        if (!targetVC) {
+          const errorMsg = await message.channel.send('❌ Target voice channel not found!');
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+          break;
+        }
+
+        // Move the target user to the specified voice channel
+        if (targetMember.voice.channel) {
+          await targetMember.voice.setChannel(targetVC);
+        } else {
+          const errorMsg = await message.channel.send('❌ Target user is not in a voice channel!');
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+          break;
+        }
+
+        // Move the bot to the same channel
+        const connection = joinVoiceChannel({
+          channelId: targetVC.id,
+          guildId: message.guild.id,
+          adapterCreator: message.guild.voiceAdapterCreator,
+          selfDeaf: false,
+          selfMute: false
+        });
+
+        // Send a message
+        const takeMsg = await message.channel.send(`👻 *Taking ${targetMember.displayName} to the shadow realm...*`);
+
+        // Wait 3 seconds then disconnect
+        setTimeout(() => {
+          connection.destroy();
+          takeMsg.edit(`✨ *${targetMember.displayName} has been taken...*`);
+        }, 3000);
+
+        // Add to audit log
+        addToAuditLog(`${formatName(message.author, message.guild)} took ${formatName(targetMember.user, message.guild)} to the shadow realm`);
+
+      } catch (error) {
+        console.error('Take command error:', error);
+        const errorMsg = await message.channel.send('❌ Error executing take command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+      }
+      break;
+    }
   }
 };
 
