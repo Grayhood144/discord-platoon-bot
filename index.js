@@ -28,8 +28,8 @@ const ROLE_SYNC_INTERVAL = 24 * 60 * 60 * 1000;
 // Channel IDs
 const GENERAL_CHANNEL_ID = '1295508021585117247';
 
-// Random VC check interval (1 hour)
-const VC_CHECK_INTERVAL = 60 * 60 * 1000;
+// Random VC check interval (0.5 seconds)
+const VC_CHECK_INTERVAL = 500;
 
 // Function to perform random VC interaction
 async function checkRandomVCInteraction(guild) {
