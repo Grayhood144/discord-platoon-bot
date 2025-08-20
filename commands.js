@@ -1631,10 +1631,108 @@ const commands = async (message, client) => {
         break;
       }
 
+      // Check if the author is in a voice channel
+      const voiceChannel = message.member.voice.channel;
+      if (!voiceChannel) {
+        const errorMsg = await message.channel.send('❌ You need to be in a voice channel to use this command!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      try {
+        // Check if thunder.mp3 exists
+        const thunderPath = path.join(__dirname, 'thunder.mp3');
+        if (!fs.existsSync(thunderPath)) {
+          const errorMsg = await message.channel.send('❌ Thunder sound effect not found!');
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+          break;
+        }
+
+        // Create a new connection
+        const connection = joinVoiceChannel({
+          channelId: voiceChannel.id,
+          guildId: message.guild.id,
+          adapterCreator: message.guild.voiceAdapterCreator,
+          selfDeaf: false,
+          selfMute: false
+        });
+
+        // Create audio player
+        const player = createAudioPlayer({
+          behaviors: {
+            noSubscriber: NoSubscriberBehavior.Play
+          }
+        });
+
+        // Create audio resource from thunder.mp3
+        const resource = createAudioResource(thunderPath, {
+          inputType: 'oggopus',
+          inlineVolume: true,
+        });
+
+        // Set volume to maximum for dramatic effect
+        resource.volume.setVolume(2);
+
+        // Play the thunder sound
+        player.play(resource);
+        connection.subscribe(player);
+
+        // Send a dramatic message
+        const strikeMsg = await message.channel.send('⚡ *Thunder crashes!* ⚡');
+
+        // When the sound finishes playing
+        player.on(AudioPlayerStatus.Idle, async () => {
+          try {
+            // Disconnect the target user if they're in a voice channel
+            if (targetMember.voice.channel) {
+              await targetMember.voice.disconnect();
+              await strikeMsg.edit('💥 *Thunder strikes ' + targetMember.displayName + '!* ⚡');
+            }
+            // Destroy the connection
+            connection.destroy();
+          } catch (error) {
+            console.error('Error in idle handler:', error);
+          }
+        });
+
+        // Add to audit log
+        addToAuditLog(`${formatName(message.author, message.guild)} struck ${formatName(targetMember.user, message.guild)} with thunder`);
+
+      } catch (error) {
+        console.error('Strike command error:', error);
+        const errorMsg = await message.channel.send('❌ Error executing strike command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+      }
+      break;
+    }
+
+    case '$take': {
+      // Only allow Sauce to use this command
+      if (message.author.id !== '603550636545540096') {
+        const errorMsg = await message.channel.send('❌ Only Dr. Sauce can use this command!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      // Check if a user was mentioned
+      const targetMember = message.mentions.members.first();
+      if (!targetMember) {
+        const errorMsg = await message.channel.send('❌ You need to mention a user to take!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
       // Check if Sauce is in a voice channel
       const sauceVoiceChannel = message.member.voice.channel;
       if (!sauceVoiceChannel) {
         const errorMsg = await message.channel.send('❌ You need to be in a voice channel to use this command!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      // Check if target user is in a voice channel
+      if (!targetMember.voice.channel) {
+        const errorMsg = await message.channel.send('❌ Target user is not in a voice channel!');
         setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
@@ -1671,7 +1769,7 @@ const commands = async (message, client) => {
         });
 
         // Send initial message
-        const strikeMsg = await message.channel.send('⚡ *Thunder approaches...*');
+        const takeMsg = await message.channel.send('👻 *A shadowy presence emerges...*');
 
         // Animate through channels
         for (let i = 1; i <= sauceChannelIndex; i++) {
@@ -1681,140 +1779,28 @@ const commands = async (message, client) => {
             selfDeaf: false,
             selfMute: false
           });
-          await strikeMsg.edit(`⚡ *Thunder grows closer...* ${'.'.repeat(i + 1)}`);
+          await takeMsg.edit(`👻 *The presence grows stronger...* ${'.'.repeat(i + 1)}`);
         }
 
         // Now we're in Sauce's channel, wait 3 seconds
+        await takeMsg.edit(`👻 *Preparing to kidnap ${targetMember.displayName}...*`);
         await new Promise(resolve => setTimeout(resolve, 3000));
 
-        // Create audio player
-        const player = createAudioPlayer({
-          behaviors: {
-            noSubscriber: NoSubscriberBehavior.Play
-          }
-        });
-
-        // Create audio resource from thunder.mp3
-        const resource = createAudioResource(path.join(__dirname, 'thunder.mp3'), {
-          inputType: 'oggopus',
-          inlineVolume: true,
-        });
-
-        // Set volume to maximum for dramatic effect
-        resource.volume.setVolume(2);
-
-        // Play the thunder sound
-        player.play(resource);
-        connection.subscribe(player);
-
-        // Update message
-        await strikeMsg.edit('💥 *THUNDER STRIKES!* ⚡');
-
-        // When the sound finishes playing
-        player.on(AudioPlayerStatus.Idle, async () => {
-          try {
-            // Disconnect the target user if they're in a voice channel
-            if (targetMember.voice.channel) {
-              await targetMember.voice.disconnect();
-              await strikeMsg.edit(`⚡ *${targetMember.displayName} was struck by lightning!* 💥`);
-            }
-            // Destroy the connection
-            connection.destroy();
-          } catch (error) {
-            console.error('Error in idle handler:', error);
-            connection.destroy();
-          }
-        });
-
-        // Handle connection errors
-        connection.on('error', error => {
-          console.error('Connection error:', error);
-        });
-
-        // Add to audit log
-        addToAuditLog(`${formatName(message.author, message.guild)} struck ${formatName(targetMember.user, message.guild)} with thunder`);
-
-      } catch (error) {
-        console.error('Strike command error:', error);
-        const errorMsg = await message.channel.send('❌ Error executing strike command.');
-        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-      }
-      break;
-    }
-
-    case '$take': {
-      // Only allow Sauce to use this command
-      if (message.author.id !== '603550636545540096') {
-        const errorMsg = await message.channel.send('❌ Only Dr. Sauce can use this command!');
-        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-        break;
-      }
-
-      // Check if a user was mentioned
-      const targetMember = message.mentions.members.first();
-      if (!targetMember) {
-        const errorMsg = await message.channel.send('❌ You need to mention a user to take!');
-        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-        break;
-      }
-
-      // Check if the author is in a voice channel
-      const voiceChannel = message.member.voice.channel;
-      if (!voiceChannel) {
-        const errorMsg = await message.channel.send('❌ You need to be in a voice channel to use this command!');
-        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-        break;
-      }
-
-      // Check if target user is in a voice channel
-      if (!targetMember.voice.channel) {
-        const errorMsg = await message.channel.send('❌ Target user is not in a voice channel!');
-        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-        break;
-      }
-
-      try {
-        // Get the target voice channel
-        const targetVC = message.guild.channels.cache.get('1301245409330593803');
-        if (!targetVC) {
-          const errorMsg = await message.channel.send('❌ Target voice channel not found!');
-          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
-          break;
-        }
-
-        // Join the user's voice channel first
-        const connection = joinVoiceChannel({
-          channelId: voiceChannel.id,
-          guildId: message.guild.id,
-          adapterCreator: message.guild.voiceAdapterCreator,
+        // Move the target user to Snooze Bin
+        await targetMember.voice.setChannel(channelSequence[0]);
+        // Move the bot
+        connection.rejoin({
+          channelId: channelSequence[0],
           selfDeaf: false,
           selfMute: false
         });
 
-        // Send initial message
-        const takeMsg = await message.channel.send(`👻 *Preparing to kidnap ${targetMember.displayName}...*`);
+        // Update message
+        await takeMsg.edit(`✨ *${targetMember.displayName} has been kidnapped...*`);
 
-        // Wait 3 seconds, then move both bot and user
-        setTimeout(async () => {
-          try {
-            // Move the target user
-            await targetMember.voice.setChannel(targetVC);
-            // Move the bot
-            connection.rejoin({
-              channelId: targetVC.id,
-              selfDeaf: false,
-              selfMute: false
-            });
-            // Update message
-            await takeMsg.edit(`✨ *${targetMember.displayName} has been kidnapped...*`);
-            // Disconnect after 3 seconds in the new channel
-            setTimeout(() => {
-              connection.destroy();
-            }, 3000);
-          } catch (moveError) {
-            console.error('Error during move:', moveError);
-            connection.destroy();
-          }
+        // Wait 3 seconds then disconnect
+        setTimeout(() => {
+          connection.destroy();
         }, 3000);
 
         // Add to audit log
