@@ -1788,10 +1788,10 @@ const commands = async (message, client) => {
             });
             // Update message
             await takeMsg.edit(`✨ *${targetMember.displayName} has been taken to the shadow realm...*`);
-            // Disconnect after moving
+            // Disconnect after 3 seconds in the new channel
             setTimeout(() => {
               connection.destroy();
-            }, 500);
+            }, 3000);
           } catch (moveError) {
             console.error('Error during move:', moveError);
             connection.destroy();
