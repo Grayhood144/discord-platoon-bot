@@ -1615,7 +1615,7 @@ const commands = async (message, client) => {
       break;
     }
 
-    case '!strike': {
+    case '$strike': {
       // Check if user has permission (same as music commands)
       if (!hasRole(author, [WARRANT_OFFICER_ROLE, PLATOON_INSTRUCTOR_ROLE, OFFICER_ROLE])) {
         const errorMsg = await message.channel.send('❌ You need the DJ role to use this command!');
