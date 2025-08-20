@@ -44,6 +44,33 @@ client.once('ready', async () => {
     console.log('🔄 Running initial deployment...');
     const orgChannel = await client.channels.fetch(ORGANIZATION_CHANNEL_ID);
     if (orgChannel) {
+      // Clear existing messages
+      console.log('🧹 Clearing organization channel...');
+      try {
+        let messages;
+        do {
+          messages = await orgChannel.messages.fetch({ limit: 100 });
+          if (messages.size > 0) {
+            try {
+              await orgChannel.bulkDelete(messages);
+            } catch (bulkError) {
+              // If bulk delete fails (messages too old), delete one by one
+              console.log('⚠️ Some messages too old for bulk delete, deleting individually...');
+              for (const message of messages.values()) {
+                try {
+                  await message.delete();
+                } catch (deleteError) {
+                  console.error('Error deleting message:', deleteError);
+                }
+              }
+            }
+          }
+        } while (messages.size === 100);
+        console.log('✅ Channel cleared');
+      } catch (clearError) {
+        console.error('Error clearing channel:', clearError);
+      }
+
       await commandModule.updateDeployMessage(client, orgChannel);
       console.log('✅ Initial deployment complete');
     }
