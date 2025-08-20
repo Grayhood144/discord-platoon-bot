@@ -6,6 +6,8 @@ const deployPath = './deployMessages.json';
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { handlePlay, handleSkip, handleQueue } = require('./musicHandler');
 const { exec } = require('child_process');
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, NoSubscriberBehavior } = require('@discordjs/voice');
+const path = require('path');
 
 function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
@@ -1609,6 +1611,78 @@ const commands = async (message, client) => {
       } catch (error) {
         console.error('Error executing logs command:', error);
         message.channel.send('❌ Error executing logs command.');
+      }
+      break;
+    }
+
+    case '!strike': {
+      // Check if user has permission (same as music commands)
+      if (!hasRole(author, [WARRANT_OFFICER_ROLE, PLATOON_INSTRUCTOR_ROLE, OFFICER_ROLE])) {
+        const errorMsg = await message.channel.send('❌ You need the DJ role to use this command!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      // Check if a user was mentioned
+      const targetMember = message.mentions.members.first();
+      if (!targetMember) {
+        const errorMsg = await message.channel.send('❌ You need to mention a user to strike!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      // Check if the author is in a voice channel
+      const voiceChannel = author.voice.channel;
+      if (!voiceChannel) {
+        const errorMsg = await message.channel.send('❌ You need to be in a voice channel to use this command!');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      try {
+        // Join the voice channel
+        const connection = joinVoiceChannel({
+          channelId: voiceChannel.id,
+          guildId: message.guild.id,
+          adapterCreator: message.guild.voiceAdapterCreator,
+          selfDeaf: false,
+          selfMute: false
+        });
+
+        // Create audio player
+        const player = createAudioPlayer({
+          behaviors: {
+            noSubscriber: NoSubscriberBehavior.Play
+          }
+        });
+
+        // Create audio resource from thunder.mp3
+        const resource = createAudioResource(path.join(__dirname, 'thunder.mp3'), {
+          inlineVolume: true
+        });
+        resource.volume.setVolume(1); // Full volume for dramatic effect
+
+        // Play the thunder sound
+        player.play(resource);
+        connection.subscribe(player);
+
+        // When the sound finishes, disconnect the target user and leave the channel
+        player.on(AudioPlayerStatus.Idle, async () => {
+          // Disconnect the target user if they're in a voice channel
+          if (targetMember.voice.channel) {
+            await targetMember.voice.disconnect();
+          }
+          // Leave the voice channel
+          connection.destroy();
+        });
+
+        // Add to audit log
+        addToAuditLog(`${formatName(message.author, message.guild)} struck ${formatName(targetMember.user, message.guild)} with thunder`);
+
+      } catch (error) {
+        console.error('Strike command error:', error);
+        const errorMsg = await message.channel.send('❌ Error executing strike command.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
       }
       break;
     }
