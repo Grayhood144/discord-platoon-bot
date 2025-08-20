@@ -18,19 +18,68 @@ const NEW_MEMBER_ROLES = {
 // Member role ID
 const MEMBER_ROLE_ID = '1305992733835399238'; // - - - - OFC - - - - role ID
 
+// Organization channel ID for deploy message
+const ORGANIZATION_CHANNEL_ID = '1336126211264352298';
+
+// Role sync interval (24 hours)
+const ROLE_SYNC_INTERVAL = 24 * 60 * 60 * 1000;
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.DirectMessages
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.GuildVoiceStates
   ],
   partials: [Partials.Message, Partials.Channel, Partials.GuildMember]
 });
 
 client.once('ready', async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+  
+  try {
+    // Initial deployment in organization channel
+    console.log('🔄 Running initial deployment...');
+    const orgChannel = await client.channels.fetch(ORGANIZATION_CHANNEL_ID);
+    if (orgChannel) {
+      await commandModule.updateDeployMessage(client, orgChannel);
+      console.log('✅ Initial deployment complete');
+    }
+
+    // Initial role sync
+    console.log('🔄 Running initial role sync...');
+    const guilds = client.guilds.cache;
+    for (const guild of guilds.values()) {
+      await commandModule.commands({ 
+        content: '$sync',
+        guild: guild,
+        channel: orgChannel,
+        author: client.user,
+        member: guild.members.cache.get(client.user.id)
+      }, client);
+    }
+    console.log('✅ Initial role sync complete');
+
+    // Set up daily role sync
+    setInterval(async () => {
+      console.log('🔄 Running scheduled role sync...');
+      for (const guild of guilds.values()) {
+        await commandModule.commands({
+          content: '$sync',
+          guild: guild,
+          channel: orgChannel,
+          author: client.user,
+          member: guild.members.cache.get(client.user.id)
+        }, client);
+      }
+      console.log('✅ Scheduled role sync complete');
+    }, ROLE_SYNC_INTERVAL);
+
+  } catch (error) {
+    console.error('Error in startup procedures:', error);
+  }
   
   // Set up daily role check at 9:00 AM UTC
   const now = new Date();
