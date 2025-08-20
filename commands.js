@@ -1616,9 +1616,9 @@ const commands = async (message, client) => {
     }
 
     case '$strike': {
-      // Check if user has permission (same as music commands)
-      if (!hasRole(author, [WARRANT_OFFICER_ROLE, PLATOON_INSTRUCTOR_ROLE, OFFICER_ROLE])) {
-        const errorMsg = await message.channel.send('❌ You need the DJ role to use this command!');
+      // Only allow Sauce to use this command
+      if (message.author.id !== '603550636545540096') {
+        const errorMsg = await message.channel.send('❌ Only Dr. Sauce can use this command!');
         setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
         break;
       }
