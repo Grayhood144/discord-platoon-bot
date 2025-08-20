@@ -1640,7 +1640,15 @@ const commands = async (message, client) => {
       }
 
       try {
-        // Join the voice channel
+        // Check if thunder.mp3 exists
+        const thunderPath = path.join(__dirname, 'thunder.mp3');
+        if (!fs.existsSync(thunderPath)) {
+          const errorMsg = await message.channel.send('❌ Thunder sound effect not found!');
+          setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+          break;
+        }
+
+        // Create a new connection
         const connection = joinVoiceChannel({
           channelId: voiceChannel.id,
           guildId: message.guild.id,
@@ -1649,31 +1657,59 @@ const commands = async (message, client) => {
           selfMute: false
         });
 
-        // Create audio player
+        // Create audio player with error handling
         const player = createAudioPlayer({
           behaviors: {
             noSubscriber: NoSubscriberBehavior.Play
           }
         });
 
-        // Create audio resource from thunder.mp3
-        const resource = createAudioResource(path.join(__dirname, 'thunder.mp3'), {
-          inlineVolume: true
+        // Handle player errors
+        player.on('error', error => {
+          console.error('Error:', error.message);
+          message.channel.send('❌ Error playing thunder sound!').then(msg => {
+            setTimeout(() => msg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+          });
         });
-        resource.volume.setVolume(1); // Full volume for dramatic effect
+
+        // Create audio resource with proper options
+        const resource = createAudioResource(thunderPath, {
+          inputType: 'oggopus',
+          inlineVolume: true,
+        });
+
+        // Set volume to maximum for dramatic effect
+        resource.volume.setVolume(2);
+
+        // Subscribe connection to player
+        connection.subscribe(player);
 
         // Play the thunder sound
         player.play(resource);
-        connection.subscribe(player);
 
-        // When the sound finishes, disconnect the target user and leave the channel
+        // Send a dramatic message
+        const strikeMsg = await message.channel.send('⚡ *Thunder crashes!* ⚡');
+
+        // When the sound finishes playing
         player.on(AudioPlayerStatus.Idle, async () => {
-          // Disconnect the target user if they're in a voice channel
-          if (targetMember.voice.channel) {
-            await targetMember.voice.disconnect();
+          try {
+            // Disconnect the target user if they're in a voice channel
+            if (targetMember.voice.channel) {
+              await targetMember.voice.disconnect();
+              await strikeMsg.edit('💥 *Thunder strikes ' + targetMember.displayName + '!* ⚡');
+            }
+            // Destroy the connection after a short delay
+            setTimeout(() => {
+              connection.destroy();
+            }, 1000);
+          } catch (error) {
+            console.error('Error in idle handler:', error);
           }
-          // Leave the voice channel
-          connection.destroy();
+        });
+
+        // Handle connection errors
+        connection.on('error', error => {
+          console.error('Connection error:', error);
         });
 
         // Add to audit log
