@@ -1773,7 +1773,7 @@ const commands = async (message, client) => {
         });
 
         // Send initial message
-        const takeMsg = await message.channel.send(`👻 *Preparing to take ${targetMember.displayName}...*`);
+        const takeMsg = await message.channel.send(`👻 *Preparing to kidnap ${targetMember.displayName}...*`);
 
         // Wait 3 seconds, then move both bot and user
         setTimeout(async () => {
@@ -1787,7 +1787,7 @@ const commands = async (message, client) => {
               selfMute: false
             });
             // Update message
-            await takeMsg.edit(`✨ *${targetMember.displayName} has been taken to the shadow realm...*`);
+            await takeMsg.edit(`✨ *${targetMember.displayName} has been kidnapped...*`);
             // Disconnect after 3 seconds in the new channel
             setTimeout(() => {
               connection.destroy();
