@@ -54,9 +54,9 @@ async function checkRandomVCInteraction(guild) {
     // If no one is in VC, return
     if (membersInVC.length === 0) return;
 
-    // 1 in 10 chance for each member
+    // 1 in 1000 chance for each member
     for (const { member, channel } of membersInVC) {
-      if (Math.random() < 0.1) { // 10% chance
+      if (Math.random() < 0.001) { // 0.1% chance
         // Get the general channel
         const generalChannel = guild.channels.cache.get(GENERAL_CHANNEL_ID);
         if (!generalChannel) continue;
