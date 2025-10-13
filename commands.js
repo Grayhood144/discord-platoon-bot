@@ -624,6 +624,7 @@ const commands = async (message, client) => {
         `**Admin Commands** (Restricted to @S or Admins)\n` +
         `• \`$$deploy true/false\` — Enable or disable testing mode.\n` +
         `• \`SauceTest14405 / SauceTestend14405\` — Manually toggle testing mode.\n` +
+        `• \`$bump\` — Toggle the hourly bump reminder on/off.\n` +
         `• \`$auditlog\` — View audit log.\n` +
         `• \`$clearall\` — Deletes last 100 messages (requires password or admin).\n` +
         `• \`$clearcommands\` — Deletes all command messages.\n` +
@@ -1612,6 +1613,32 @@ const commands = async (message, client) => {
         console.error('Error executing logs command:', error);
         message.channel.send('❌ Error executing logs command.');
       }
+      break;
+    }
+
+    case '$bump': {
+      // Only allow admins to toggle bump reminder
+      if (!isAdmin) {
+        const errorMsg = await message.channel.send('❌ Only administrators can toggle the bump reminder.');
+        setTimeout(() => errorMsg.delete().catch(() => {}), TIMEOUTS.ERROR_MESSAGE);
+        break;
+      }
+
+      // Toggle bump reminder state
+      if (global.isBumpEnabled) {
+        global.isBumpEnabled = false;
+        stopBumpReminder();
+        const msg = await message.channel.send('⏸️ Bump reminder has been paused.');
+        setTimeout(() => msg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
+      } else {
+        global.isBumpEnabled = true;
+        startBumpReminder();
+        const msg = await message.channel.send('▶️ Bump reminder has been resumed.');
+        setTimeout(() => msg.delete().catch(() => {}), TIMEOUTS.COMMAND_MESSAGE);
+      }
+
+      // Add to audit log
+      addToAuditLog(`${formatName(message.author, message.guild)} ${global.isBumpEnabled ? 'enabled' : 'disabled'} bump reminder`);
       break;
     }
 

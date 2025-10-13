@@ -143,18 +143,40 @@ client.once('ready', async () => {
     setInterval(checkAllMemberRoles, 24 * 60 * 60 * 1000);
   }, timeUntilFirstCheck);
 
-  // Start the bump reminder
-  setInterval(async () => {
-    try {
-      const channel = await client.channels.fetch('1305956807155515402');
-      if (channel) {
-        await channel.send('/bump');
-        console.log('Sent bump command');
+  // Initialize bump reminder state
+  let bumpInterval = null;
+  let isBumpEnabled = true;
+
+  // Function to start bump reminder
+  function startBumpReminder() {
+    if (bumpInterval) return; // Already running
+    
+    bumpInterval = setInterval(async () => {
+      try {
+        const channel = await client.channels.fetch('1305956807155515402');
+        if (channel) {
+          await channel.send('/bump');
+          console.log('Sent bump command');
+        }
+      } catch (error) {
+        console.error('Error sending bump command:', error);
       }
-    } catch (error) {
-      console.error('Error sending bump command:', error);
+    }, 60 * 60 * 1000); // 1 hour in milliseconds
+    
+    console.log('Bump reminder started');
+  }
+
+  // Function to stop bump reminder
+  function stopBumpReminder() {
+    if (bumpInterval) {
+      clearInterval(bumpInterval);
+      bumpInterval = null;
+      console.log('Bump reminder stopped');
     }
-  }, 60 * 60 * 1000); // 1 hour in milliseconds
+  }
+
+  // Start bump reminder initially
+  startBumpReminder();
 });
 
 // Function to check and assign roles for a single member
