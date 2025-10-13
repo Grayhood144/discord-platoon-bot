@@ -248,6 +248,36 @@ function getRandomSauceStory() {
   return SAUCE_STORIES[Math.floor(Math.random() * SAUCE_STORIES.length)];
 }
 
+// Bump reminder state and functions
+let bumpInterval = null;
+let isBumpEnabled = true;
+
+function startBumpReminder(client) {
+  if (bumpInterval) return; // Already running
+  
+  bumpInterval = setInterval(async () => {
+    try {
+      const channel = await client.channels.fetch('1305956807155515402');
+      if (channel && isBumpEnabled) {
+        await channel.send('/bump');
+        console.log('Sent bump command');
+      }
+    } catch (error) {
+      console.error('Error sending bump command:', error);
+    }
+  }, 60 * 60 * 1000); // 1 hour in milliseconds
+  
+  console.log('Bump reminder started');
+}
+
+function stopBumpReminder() {
+  if (bumpInterval) {
+    clearInterval(bumpInterval);
+    bumpInterval = null;
+    console.log('Bump reminder stopped');
+  }
+}
+
 // Bot version and changelog
 const BOT_VERSION = {
   version: "2.4.0",
@@ -1848,5 +1878,7 @@ module.exports = {
   commands,
   assignFactionRole,
   updateDeployMessage,
-  checkAndAssignVeterancy
+  checkAndAssignVeterancy,
+  startBumpReminder,
+  stopBumpReminder
 };
