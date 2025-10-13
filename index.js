@@ -79,17 +79,33 @@ client.once('ready', async () => {
       console.log('✅ Initial deployment complete');
     }
 
-    // Initial role sync
+    // Initial role sync with delay to ensure deployment message is processed
+    console.log('🔄 Waiting for deployment to settle...');
+    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+    
     console.log('🔄 Running initial role sync...');
     const guilds = client.guilds.cache;
     for (const guild of guilds.values()) {
-      await commandModule.commands({ 
-        content: '$sync',
-        guild: guild,
-        channel: orgChannel,
-        author: client.user,
-        member: guild.members.cache.get(client.user.id)
-      }, client);
+      try {
+        // Ensure we have the latest guild data
+        await guild.members.fetch();
+        
+        // Create a proper message object for the sync command
+        const syncMessage = {
+          content: '$sync',
+          guild: guild,
+          channel: orgChannel,
+          author: client.user,
+          member: guild.members.cache.get(client.user.id),
+          delete: () => Promise.resolve() // Mock delete method
+        };
+        
+        await commandModule.commands(syncMessage, client);
+        console.log(`✅ Sync completed for guild: ${guild.name}`);
+      } catch (error) {
+        console.error(`❌ Error syncing guild ${guild.name}:`, error);
+        // Continue with other guilds even if one fails
+      }
     }
     console.log('✅ Initial role sync complete');
 
