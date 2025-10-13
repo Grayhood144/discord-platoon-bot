@@ -1,0 +1,18 @@
+{
+  "name": "dr-sauce-music-bot",
+  "version": "1.0.0",
+  "description": "Music bot extension for Dr. Sauce Discord Bot",
+  "main": "musicbot.js",
+  "scripts": {
+    "start": "node musicbot.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.11.0",
+    "@discordjs/voice": "^0.16.1",
+    "play-dl": "^1.9.7",
+    "ytdl-core": "^4.11.5",
+    "dotenv": "^16.0.3"
+  },
+  "author": "Dr. Sauce",
+  "license": "MIT"
+} 
